@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Pressure-Temperature Physics Questions</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .gas-info {
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+            border: 1px solid #ccc;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .option-content {
+            font-size: 18px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+        
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="gas-info" id="gasInfo">
+            <!-- Gas information will be generated here -->
+        </div>
+        
+        <div class="question-text" id="questionText">
+            <!-- Question text will be generated here -->
+        </div>
+        
+        <div class="options" id="options">
+            <!-- Options will be generated here -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function generateQuestion() {
+            const questionTypes = [
+                'find_pressure',
+                'find_temperature',
+                'temperature_conversion',
+                'pressure_ratio',
+                'combined_gas_law'
+            ];
+            
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+            
+            // Generate initial conditions
+            const initialPressures = [4, 6, 8, 10, 12, 15, 18, 20, 25, 30]; // psi
+            const initialTemperatures = [200, 250, 300, 350, 400, 450, 500, 550, 600, 650]; // Kelvin
+            const finalTemperatures = [300, 400, 500, 600, 700, 800, 900, 1000]; // Kelvin
+            
+            const P1 = initialPressures[Math.floor(Math.random() * initialPressures.length)];
+            const T1 = initialTemperatures[Math.floor(Math.random() * initialTemperatures.length)];
+            const T2 = finalTemperatures[Math.floor(Math.random() * finalTemperatures.length)];
+            
+            // Ensure T2 is different from T1
+            let finalT2 = T2;
+            while (finalT2 === T1) {
+                finalT2 = finalTemperatures[Math.floor(Math.random() * finalTemperatures.length)];
+            }
+            
+            const P2 = (P1 * finalT2) / T1; // Gay-Lussac's Law: P1/T1 = P2/T2
+            
+            let gasInfo, questionText, correctAnswer, wrongAnswers;
+            
+            switch(questionType) {
+                case 'find_pressure':
+                    gasInfo = `A gas is placed inside a container with constant volume. Initially, the pressure is ${P1} psi when the temperature is ${T1} kelvins.`;
+                    questionText = `What is the estimated pressure of the gas, in psi, when the temperature is ${finalT2} kelvins?`;
+                    
+                    correctAnswer = Math.round(P2);
+                    wrongAnswers = [
+                        Math.round(P2 * 0.5),
+                        Math.round(P2 * 1.5),
+                        Math.round(P2 * 2),
+                        Math.round(P1 * (finalT2 - T1) / T1)
+                    ];
+                    break;
+                    
+                case 'find_temperature':
+                    const targetPressure = Math.round(P2);
+                    gasInfo = `A gas is placed inside a container with constant volume. Initially, the pressure is ${P1} psi when the temperature is ${T1} kelvins.`;
+                    questionText = `What temperature, in kelvins, will give a pressure of ${targetPressure} psi?`;
+                    
+                    correctAnswer = Math.round((targetPressure * T1) / P1);
+                    wrongAnswers = [
+                        Math.round(correctAnswer * 0.5),
+                        Math.round(correctAnswer * 1.5),
+                        Math.round(correctAnswer + 100),
+                        Math.round(correctAnswer - 100)
+                    ];
+                    break;
+                    
+                case 'temperature_conversion':
+                    const celsiusTemp = T1 - 273.15;
+                    gasInfo = `A gas sample has a pressure of ${P1} psi at ${Math.round(celsiusTemp)}°C.`;
+                    questionText = `What is this temperature in kelvins?`;
+                    
+                    correctAnswer = Math.round(T1);
+                    wrongAnswers = [
+                        Math.round(celsiusTemp),
+                        Math.round(T1 + 273.15),
+                        Math.round(T1 - 100),
+                        Math.round(T1 / 2)
+                    ];
+                    break;
+                    
+                case 'pressure_ratio':
+                    gasInfo = `A gas undergoes a temperature change from ${T1} K to ${finalT2} K at constant volume.`;
+                    questionText = `If the initial pressure was ${P1} psi, what is the ratio of final pressure to initial pressure?`;
+                    
+                    const ratio = finalT2 / T1;
+                    correctAnswer = ratio.toFixed(2);
+                    wrongAnswers = [
+                        (ratio * 0.5).toFixed(2),
+                        (ratio * 2).toFixed(2),
+                        (T1 / finalT2).toFixed(2),
+                        ((finalT2 - T1) / T1).toFixed(2)
+                    ];
+                    break;
+                    
+                case 'combined_gas_law':
+                    const V1 = 10; // Initial volume in L
+                    const V2 = 15; // Final volume in L
+                    const P2_combined = (P1 * V1 * finalT2) / (V2 * T1);
+                    
+                    gasInfo = `A gas initially has pressure ${P1} psi, volume ${V1} L, and temperature ${T1} K.`;
+                    questionText = `If the volume changes to ${V2} L and temperature changes to ${finalT2} K, what is the new pressure in psi?`;
+                    
+                    correctAnswer = Math.round(P2_combined);
+                    wrongAnswers = [
+                        Math.round(P2_combined * 0.5),
+                        Math.round(P2_combined * 1.5),
+                        Math.round(P2_combined * 2),
+                        Math.round(P1 * finalT2 / T1)
+                    ];
+                    break;
+            }
+            
+            // Remove duplicates and ensure we have enough unique options
+            wrongAnswers = [...new Set(wrongAnswers)].filter(ans => ans !== correctAnswer);
+            while (wrongAnswers.length < 3) {
+                const variation = correctAnswer + Math.floor(Math.random() * 20) - 10;
+                if (variation !== correctAnswer && !wrongAnswers.includes(variation) && variation > 0) {
+                    wrongAnswers.push(variation);
+                }
+            }
+            
+            // Create options array and shuffle
+            const options = [correctAnswer, ...wrongAnswers.slice(0, 3)].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                gasInfo,
+                questionText,
+                correctAnswer,
+                options,
+                correctIndex: options.indexOf(correctAnswer),
+                questionType,
+                P1,
+                T1,
+                T2: finalT2,
+                P2: Math.round(P2)
+            };
+        }
+
+        function displayQuestion() {
+            const gasInfoDiv = document.getElementById('gasInfo');
+            const questionTextDiv = document.getElementById('questionText');
+            const optionsDiv = document.getElementById('options');
+            
+            gasInfoDiv.innerHTML = currentQuestion.gasInfo;
+            questionTextDiv.innerHTML = currentQuestion.questionText;
+            
+            // Display options
+            optionsDiv.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span class="option-content">${option}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Select new option
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> You correctly applied the gas laws to solve this problem.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> Remember the key gas law relationships:
+                    <br>• At constant volume: P₁/T₁ = P₂/T₂ (Gay-Lussac's Law)
+                    <br>• Temperature must be in Kelvin for gas law calculations
+                    <br>• Pressure is directly proportional to absolute temperature
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            
+            let explanation = '<strong>Complete Solution:</strong><br>';
+            
+            switch(currentQuestion.questionType) {
+                case 'find_pressure':
+                    explanation += `<div class="formula">Using Gay-Lussac's Law: P₁/T₁ = P₂/T₂</div>`;
+                    explanation += `1. Given: P₁ = ${currentQuestion.P1} psi, T₁ = ${currentQuestion.T1} K, T₂ = ${currentQuestion.T2} K<br>`;
+                    explanation += `2. Solve for P₂: P₂ = P₁ × (T₂/T₁)<br>`;
+                    explanation += `3. P₂ = ${currentQuestion.P1} × (${currentQuestion.T2}/${currentQuestion.T1})<br>`;
+                    explanation += `4. P₂ = ${currentQuestion.P1} × ${(currentQuestion.T2/currentQuestion.T1).toFixed(3)} = ${currentQuestion.P2} psi`;
+                    break;
+                    
+                case 'find_temperature':
+                    explanation += `<div class="formula">Using Gay-Lussac's Law: P₁/T₁ = P₂/T₂</div>`;
+                    explanation += `1. Given: P₁ = ${currentQuestion.P1} psi, T₁ = ${currentQuestion.T1} K, P₂ = ${currentQuestion.correctAnswer} psi<br>`;
+                    explanation += `2. Solve for T₂: T₂ = T₁ × (P₂/P₁)<br>`;
+                    explanation += `3. T₂ = ${currentQuestion.T1} × (${currentQuestion.correctAnswer}/${currentQuestion.P1})<br>`;
+                    explanation += `4. T₂ = ${currentQuestion.correctAnswer} K`;
+                    break;
+                    
+                case 'temperature_conversion':
+                    explanation += `Temperature conversion from Celsius to Kelvin:<br>`;
+                    explanation += `K = °C + 273.15<br>`;
+                    explanation += `K = ${Math.round(currentQuestion.T1 - 273.15)} + 273.15 = ${currentQuestion.T1} K`;
+                    break;
+                    
+                case 'pressure_ratio':
+                    explanation += `<div class="formula">At constant volume: P₁/T₁ = P₂/T₂</div>`;
+                    explanation += `1. Rearranging: P₂/P₁ = T₂/T₁<br>`;
+                    explanation += `2. Ratio = ${currentQuestion.T2}/${currentQuestion.T1} = ${currentQuestion.correctAnswer}`;
+                    break;
+                    
+                case 'combined_gas_law':
+                    explanation += `<div class="formula">Combined Gas Law: (P₁V₁)/T₁ = (P₂V₂)/T₂</div>`;
+                    explanation += `1. Solve for P₂: P₂ = (P₁V₁T₂)/(V₂T₁)<br>`;
+                    explanation += `2. P₂ = (${currentQuestion.P1} × 10 × ${currentQuestion.T2})/(15 × ${currentQuestion.T1})<br>`;
+                    explanation += `3. P₂ = ${currentQuestion.correctAnswer} psi`;
+                    break;
+            }
+            
+            feedback.innerHTML = explanation;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

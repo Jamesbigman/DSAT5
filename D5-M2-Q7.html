@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Equation Question</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid black;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-text">
+            Solve the equation: (x - 5)(x + 5) - 3 = -3
+        </div>
+        
+        <input type="text" class="answer-input" id="answerInput" placeholder="Enter your answer here">
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()">Submit Answer</button>
+            <button class="btn" onclick="showSolution()">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim();
+            const feedback = document.getElementById('feedback');
+            
+            // Accept either 5 or -5 as correct answers
+            if (userAnswer === '5' || userAnswer === '-5') {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = '<strong>Correct!</strong> Well done. You solved the equation correctly.';
+            } else {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = '<strong>Incorrect.</strong> Try solving the equation step by step.';
+            }
+        }
+        
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            feedback.innerHTML = `
+                <strong>Solution:</strong><br>
+                1. Start with the equation: (x - 5)(x + 5) - 3 = -3<br>
+                2. Recognize that (x - 5)(x + 5) is a difference of squares: x² - 25<br>
+                3. Rewrite the equation: x² - 25 - 3 = -3<br>
+                4. Simplify: x² - 28 = -3<br>
+                5. Add 28 to both sides: x² = 25<br>
+                6. Take the square root of both sides: x = ±5<br>
+                <br>
+                The solutions are <strong>5</strong> and <strong>-5</strong>.
+            `;
+        }
+    </script>
+</body>
+</html>

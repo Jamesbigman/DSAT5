@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebraic System Question</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- MathJax for rendering mathematical expressions -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$']] // For block equations
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .equation-display {
+            font-family: 'Times New Roman', serif; /* For mathematical notation */
+            font-size: 1.8em;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.8; /* Increased line height for better display */
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .feedback-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .feedback-incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .answer-input {
+            width: 100%;
+            max-width: 200px;
+            padding: 10px;
+            margin: 15px auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            text-align: center;
+            display: block; /* Center the input */
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Algebraic System Solver</h1>
+
+        <div class="question-section">
+            <div class="equation-display" id="equation-display">
+                <!-- Equations will be dynamically generated here -->
+            </div>
+            <p class="text-lg text-gray-700 mb-4" id="question-text">
+                A solution to the given system of equations is $(x, y)$, where $x > 0$. What is the value of $x$?
+            </p>
+
+            <form id="answer-form">
+                <input type="number" id="user-answer" class="answer-input" placeholder="Enter value of x">
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                    <button type="button" class="btn btn-secondary" onclick="generateNewQuestion()">Generate New Question</button>
+                    <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+                </div>
+            </form>
+            <div id="feedback-message" class="feedback-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const equationDisplayElement = document.getElementById('equation-display');
+        const questionTextElement = document.getElementById('question-text');
+        const userAnswerInput = document.getElementById('user-answer');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+
+        let currentQuestion = {}; // Stores the current question's data (correct answer)
+
+        // Function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates a system of equations (linear and quadratic) with integer solutions for x.
+         * y = m*x
+         * y = x^2 + c
+         * The function ensures there's at least one positive integer solution for x.
+         * @returns {object} An object containing equation parameters and the positive x solution.
+         */
+        function generateEquationsWithPositiveXSolution() {
+            let m, c;
+            let x1, x2; // Solutions for x
+
+            // Loop until we find a system with at least one positive integer solution for x
+            do {
+                // Generate 'm' for y = mx (linear equation)
+                m = getRandomInt(1, 5); // Positive slope
+
+                // Generate 'c' for y = x^2 + c (quadratic equation)
+                // c must be negative to ensure real roots, and chosen to make integer roots
+                // We want x^2 - mx + c = 0 to have integer solutions.
+                // Let's pick a positive integer solution for x (e.g., x_sol)
+                // Then c = m*x_sol - x_sol^2
+                const x_sol = getRandomInt(2, 6); // Desired positive integer solution for x
+                c = m * x_sol - Math.pow(x_sol, 2);
+
+                // Solve the quadratic equation: x^2 - mx + c = 0
+                // Discriminant D = (-m)^2 - 4(1)(c) = m^2 - 4c
+                const discriminant = Math.pow(m, 2) - 4 * c;
+
+                if (discriminant >= 0) {
+                    const sqrtD = Math.sqrt(discriminant);
+                    if (Number.isInteger(sqrtD)) { // Check if discriminant is a perfect square
+                        x1 = (m + sqrtD) / 2;
+                        x2 = (m - sqrtD) / 2;
+
+                        // Check if at least one solution is a positive integer
+                        if (Number.isInteger(x1) && x1 > 0 || Number.isInteger(x2) && x2 > 0) {
+                            // Found a valid system
+                            return {
+                                linear_m: m,
+                                quad_c: c,
+                                x_solution: (Number.isInteger(x1) && x1 > 0) ? x1 : x2 // Return the positive integer x
+                            };
+                        }
+                    }
+                }
+            } while (true); // Keep looping until a valid system is found
+        }
+
+
+        // Function to generate a new question
+        function generateNewQuestion() {
+            // Clear previous user input and feedback
+            userAnswerInput.value = '';
+            feedbackMessageElement.classList.add('hidden');
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            // Generate equations with a positive integer x solution
+            const { linear_m, quad_c, x_solution } = generateEquationsWithPositiveXSolution();
+
+            // Construct the equations string using MathJax block delimiters
+            const equationsHtml = `
+                $$ y = ${linear_m}x $$
+                $$ y = x^2 ${quad_c > 0 ? '+' : ''} ${quad_c} $$
+            `;
+
+            // Update equation display in the DOM
+            equationDisplayElement.innerHTML = equationsHtml;
+
+            // Store the correct x-value for feedback
+            currentQuestion = {
+                correctValue: x_solution
+            };
+
+            // Trigger MathJax typesetting after updating the DOM
+            if (window.MathJax) {
+                MathJax.typesetPromise([equationDisplayElement, questionTextElement]).catch(function (err) {
+                    console.error('MathJax typesetting failed:', err);
+                });
+            }
+        }
+
+        // Function to submit the answer
+        function submitAnswer() {
+            const userAnswer = parseInt(userAnswerInput.value); // Get integer value from input
+
+            if (isNaN(userAnswer)) {
+                feedbackMessageElement.textContent = 'Please enter a number.';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            } else if (userAnswer === currentQuestion.correctValue) {
+                feedbackMessageElement.textContent = 'Correct Answer!';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-incorrect');
+                feedbackMessageElement.classList.add('feedback-correct');
+            } else {
+                feedbackMessageElement.textContent = `Incorrect. The correct answer was ${currentQuestion.correctValue}.`;
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            }
+        }
+
+        // Function to export content as PDF
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export'); // Element to capture
+
+            const canvas = await html2canvas(element, {
+                scale: 1, // Optimized for smaller PDF file size
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with quality 0.8
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save('algebraic_system_question.pdf');
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            generateNewQuestion(); // Generate the first question when the page loads
+        };
+    </script>
+</body>
+</html>

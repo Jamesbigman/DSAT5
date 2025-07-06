@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ratio Problem Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .ratio-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            transition: background-color 0.3s;
+        }
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+        }
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+        .solution-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            display: none;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            margin-right: 10px;
+            line-height: 25px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .math {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ratio Problem Generator</h1>
+    
+    <div class="question-container">
+        <p>At a particular event, the ratio of <span class="highlight">coaches to athletes</span> is <span id="ratioDisplay" class="highlight">1 to 26</span>.</p>
+        <div class="ratio-info">
+            <p>If there are <span class="math">x</span> coaches at the event, which of the following expressions represents the number of athletes?</p>
+        </div>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) <span class="math" id="optionA">\(\frac{x}{26}\)</span></div>
+        <div class="option" data-value="B">B) <span class="math" id="optionB">\(26x\)</span></div>
+        <div class="option" data-value="C">C) <span class="math" id="optionC">\(x + 26\)</span></div>
+        <div class="option" data-value="D">D) <span class="math" id="optionD">\(\frac{26}{x}\)</span></div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="solution-steps" id="solutionSteps">
+        <h3>Solution Steps:</h3>
+        <div class="step" id="step1"><span class="step-number">1</span> <span id="step1Text"></span></div>
+        <div class="step" id="step2"><span class="step-number">2</span> <span id="step2Text"></span></div>
+        <div class="step" id="step3"><span class="step-number">3</span> <span id="step3Text"></span></div>
+    </div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Current question data
+        let currentQuestion = {
+            ratio: [1, 26],
+            correctAnswer: 'B',
+            variable: 'x'
+        };
+
+        // Generate random ratio problem
+        function generateQuestion() {
+            // Clear previous selection and feedback
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('solutionSteps').style.display = 'none';
+            
+            // Generate random ratio (keeping numbers reasonable)
+            const firstTerm = Math.floor(Math.random() * 3) + 1; // 1-3
+            const secondTerm = Math.floor(Math.random() * 20) + 10; // 10-29
+            
+            currentQuestion.ratio = [firstTerm, secondTerm];
+            currentQuestion.variable = String.fromCharCode(120 + Math.floor(Math.random() * 3)); // x, y, or z
+            
+            // Update question display
+            document.getElementById('ratioDisplay').textContent = `${firstTerm} to ${secondTerm}`;
+            
+            // Generate options - one correct and three distractors
+            generateOptions();
+            
+            // Generate solution steps
+            generateSolutionSteps();
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Generate options with one correct answer and three distractors
+        function generateOptions() {
+            const options = {};
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            const varSymbol = currentQuestion.variable;
+            const [a, b] = currentQuestion.ratio;
+            
+            // Correct answer (b * x)
+            options[optionLetters[0]] = `\\(${b}${varSymbol}\\)`;
+            options.correctOption = optionLetters[0];
+            
+            // Generate distractors
+            const distractors = [
+                `\\(\\frac{${varSymbol}}{${b}}\\)`,  // x/b
+                `\\(${varSymbol} + ${b}\\)`,         // x + b
+                `\\(\\frac{${b}}{${varSymbol}}\\)`   // b/x
+            ];
+            
+            // Shuffle distractors
+            for (let i = distractors.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
+            }
+            
+            // Assign distractors to remaining options
+            for (let i = 1; i < optionLetters.length; i++) {
+                options[optionLetters[i]] = distractors[i - 1];
+            }
+            
+            // Shuffle options
+            const shuffledOptions = shuffleOptions(options, optionLetters);
+            
+            // Update the options display
+            document.getElementById('optionA').innerHTML = shuffledOptions.A;
+            document.getElementById('optionB').innerHTML = shuffledOptions.B;
+            document.getElementById('optionC').innerHTML = shuffledOptions.C;
+            document.getElementById('optionD').innerHTML = shuffledOptions.D;
+            
+            // Store correct answer
+            currentQuestion.correctAnswer = shuffledOptions.correctOption;
+        }
+
+        // Shuffle options while keeping track of correct answer
+        function shuffleOptions(options, optionLetters) {
+            const values = optionLetters.map(letter => options[letter]);
+            
+            // Shuffle values
+            for (let i = values.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [values[i], values[j]] = [values[j], values[i]];
+            }
+            
+            // Find where the correct value moved
+            const newCorrectIndex = values.indexOf(options[options.correctOption]);
+            const newCorrectOption = optionLetters[newCorrectIndex];
+            
+            // Create new options object
+            const shuffledOptions = {
+                A: values[0],
+                B: values[1],
+                C: values[2],
+                D: values[3],
+                correctOption: newCorrectOption
+            };
+            
+            return shuffledOptions;
+        }
+
+        // Generate step-by-step solution
+        function generateSolutionSteps() {
+            const [a, b] = currentQuestion.ratio;
+            const varSymbol = currentQuestion.variable;
+            
+            const step1 = `The ratio ${a}:${b} means for every ${a} coach, there are ${b} athletes.`;
+            const step2 = `If there are ${varSymbol} coaches, we multiply by ${b}/${a} to find the number of athletes.`;
+            const step3 = `Since the ratio simplifies to 1:${b/a} (when a=1), the number of athletes = ${b} × ${varSymbol} = ${b}${varSymbol}`;
+            
+            document.getElementById('step1Text').textContent = step1;
+            document.getElementById('step2Text').textContent = step2;
+            document.getElementById('step3Text').textContent = step3;
+        }
+
+        // Event listeners for options
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                const solutionSteps = document.getElementById('solutionSteps');
+                const [a, b] = currentQuestion.ratio;
+                const varSymbol = currentQuestion.variable;
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ <strong>Correct!</strong> With a ratio of ${a}:${b}, the number of athletes would be ${b}${varSymbol}.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    const selectedOption = document.getElementById(`option${selectedValue}`).textContent;
+                    feedback.innerHTML = `❌ <strong>Incorrect.</strong> You selected ${selectedOption}, but the correct answer is ${b}${varSymbol}.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+                solutionSteps.style.display = 'block';
+            });
+        });
+
+        // Event listener for new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Event listener for export PDF button
+        document.getElementById('exportPDF').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Ratio Problem', 105, 20, {align: 'center'});
+            
+            // Add question text
+            doc.setFontSize(12);
+            const [a, b] = currentQuestion.ratio;
+            doc.text(`At a particular event, the ratio of coaches to athletes is ${a} to ${b}.`, 20, 30);
+            doc.text(`If there are ${currentQuestion.variable} coaches at the event, which of the`, 20, 40);
+            doc.text(`following expressions represents the number of athletes?`, 20, 50);
+            
+            // Add options (plain text representation)
+            doc.text('Options:', 20, 70);
+            doc.text(`A) ${currentQuestion.variable}/${b}`, 30, 80);
+            doc.text(`B) ${b}${currentQuestion.variable}`, 30, 90);
+            doc.text(`C) ${currentQuestion.variable} + ${b}`, 30, 100);
+            doc.text(`D) ${b}/${currentQuestion.variable}`, 30, 110);
+            
+            // Add solution steps
+            doc.setFontSize(14);
+            doc.text('Solution Steps:', 20, 130);
+            doc.setFontSize(12);
+            
+            const steps = [
+                `1. The ratio ${a}:${b} means for every ${a} coach, there are ${b} athletes.`,
+                `2. For ${currentQuestion.variable} coaches, multiply by ${b}/${a} to find athletes.`,
+                `3. Number of athletes = ${b} × ${currentQuestion.variable} = ${b}${currentQuestion.variable}`
+            ];
+            
+            steps.forEach((step, index) => {
+                doc.text(step, 30, 140 + (index * 10));
+            });
+            
+            // Save the PDF
+            doc.save('Ratio_Problem.pdf');
+        });
+
+        // Generate the first question
+        generateQuestion();
+    </script>
+</body>
+</html>

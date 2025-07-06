@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Algebraic Expression Question</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .expression {
+            font-size: 20px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        
+        .condition {
+            font-size: 16px;
+            text-align: left;
+            margin: 15px 0;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .option-content {
+            font-size: 18px;
+            font-style: italic;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+        
+        .fraction {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 5px;
+        }
+        
+        .numerator {
+            border-bottom: 1px solid black;
+            padding-bottom: 2px;
+        }
+        
+        .denominator {
+            padding-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-text">
+            Which expression is equivalent to
+        </div>
+        
+        <div class="expression" id="mainExpression">
+            <!-- Expression will be generated here -->
+        </div>
+        
+        <div class="condition" id="condition">
+            <!-- Condition will be generated here -->
+        </div>
+        
+        <div class="options" id="options">
+            <!-- Options will be generated here -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function createFraction(numerator, denominator) {
+            return `<div class="fraction"><div class="numerator">${numerator}</div><div class="denominator">${denominator}</div></div>`;
+        }
+
+        function generateQuestion() {
+            const variables = ['k', 'x', 'n', 'm', 'a', 'b'];
+            const variable = variables[Math.floor(Math.random() * variables.length)];
+            
+            // Generate random coefficients
+            const coeff1 = Math.floor(Math.random() * 8) + 2; // 2-9
+            const coeff2 = Math.floor(Math.random() * 8) + 2; // 2-9
+            const coeff3 = Math.floor(Math.random() * 6) + 1; // 1-6
+            
+            // Choose question type
+            const questionTypes = [
+                'factoring',
+                'combining_fractions',
+                'simplifying_rational',
+                'distributive_property'
+            ];
+            
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+            
+            let mainExpression, condition, correctAnswer, wrongAnswers;
+            
+            switch(questionType) {
+                case 'factoring':
+                    // Expression like (coeff1 * variable * a) / variable + (coeff2 * variable * b)
+                    const a = Math.floor(Math.random() * 5) + 1;
+                    const b = Math.floor(Math.random() * 5) + 1;
+                    mainExpression = createFraction(`${coeff1}${variable}${a > 1 ? 'a' : ''}`, `${variable}`) + ` + ${coeff2}${variable}${b > 1 ? `${variable}` : ''}`;
+                    condition = `where ${variable} > 0`;
+                    correctAnswer = createFraction(`${variable}(${coeff1}${a > 1 ? 'a' : ''} + ${coeff2}${b > 1 ? variable : ''})`, `${variable}`);
+                    wrongAnswers = [
+                        createFraction(`${coeff1 + coeff2}${variable}${a > 1 ? 'a' : ''}`, `${variable}`),
+                        createFraction(`${coeff1}${a > 1 ? 'a' : ''} + ${coeff2}${b > 1 ? variable : ''}`, `${variable}`),
+                        `${coeff1}${a > 1 ? 'a' : ''} + ${coeff2}${b > 1 ? variable : ''}`
+                    ];
+                    break;
+                    
+                case 'combining_fractions':
+                    // Expression like coeff1*a/variable + coeff2*a*variable
+                    mainExpression = createFraction(`${coeff1}a`, `${variable}`) + ` + ${coeff2}a${variable}`;
+                    condition = `where ${variable} > 0`;
+                    correctAnswer = createFraction(`${coeff1}a + ${coeff2}a${variable}²`, `${variable}`);
+                    wrongAnswers = [
+                        createFraction(`${coeff1 + coeff2}a${variable}`, `${variable}`),
+                        createFraction(`${coeff1}a${variable}²`, `${variable}`),
+                        createFraction(`a(${coeff1} + ${coeff2}${variable})`, `${variable}`)
+                    ];
+                    break;
+                    
+                case 'simplifying_rational':
+                    // Expression like (coeff1*variable²)/(variable) + coeff2*variable
+                    mainExpression = createFraction(`${coeff1}${variable}²`, `${variable}`) + ` + ${coeff2}${variable}`;
+                    condition = `where ${variable} > 0`;
+                    correctAnswer = `${coeff1}${variable} + ${coeff2}${variable}`;
+                    wrongAnswers = [
+                        createFraction(`${coeff1 + coeff2}${variable}²`, `${variable}`),
+                        createFraction(`${coeff1}${variable}²`, `${variable}`),
+                        `${coeff1 + coeff2}${variable}`
+                    ];
+                    break;
+                    
+                case 'distributive_property':
+                    // Expression like coeff1*a(variable + coeff2) / variable
+                    mainExpression = createFraction(`${coeff1}a(${variable} + ${coeff2})`, `${variable}`);
+                    condition = `where ${variable} > 0`;
+                    correctAnswer = createFraction(`${coeff1}a${variable} + ${coeff1 * coeff2}a`, `${variable}`);
+                    wrongAnswers = [
+                        createFraction(`${coeff1}a`, `${variable}`),
+                        `${coeff1}a + ${coeff2}a`,
+                        createFraction(`${coeff1}a(${variable} + ${coeff2})`, `1`)
+                    ];
+                    break;
+            }
+            
+            // Create options array
+            const options = [correctAnswer, ...wrongAnswers].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                mainExpression,
+                condition,
+                correctAnswer,
+                options,
+                correctIndex: options.indexOf(correctAnswer),
+                questionType,
+                variable,
+                coeff1,
+                coeff2,
+                coeff3
+            };
+        }
+
+        function displayQuestion() {
+            const mainExpressionDiv = document.getElementById('mainExpression');
+            const conditionDiv = document.getElementById('condition');
+            const optionsDiv = document.getElementById('options');
+            
+            mainExpressionDiv.innerHTML = currentQuestion.mainExpression;
+            conditionDiv.innerHTML = currentQuestion.condition;
+            
+            // Display options
+            optionsDiv.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span class="option-content">${option}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Select new option
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> The expression simplifies by factoring out common terms or combining like terms.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> The correct answer involves careful algebraic manipulation. 
+                    Look for common factors or terms that can be combined.
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            
+            let explanation = '<strong>Complete Solution:</strong><br>';
+            
+            switch(currentQuestion.questionType) {
+                case 'factoring':
+                    explanation += `Factor out common terms from both parts of the expression.<br>`;
+                    explanation += `The variable ${currentQuestion.variable} appears in both terms.`;
+                    break;
+                case 'combining_fractions':
+                    explanation += `Combine fractions by finding a common denominator.<br>`;
+                    explanation += `Convert the second term to have denominator ${currentQuestion.variable}.`;
+                    break;
+                case 'simplifying_rational':
+                    explanation += `Simplify the rational expression by canceling common factors.<br>`;
+                    explanation += `${currentQuestion.variable}²/${currentQuestion.variable} = ${currentQuestion.variable} when ${currentQuestion.variable} > 0.`;
+                    break;
+                case 'distributive_property':
+                    explanation += `Apply the distributive property to expand the numerator.<br>`;
+                    explanation += `Then separate into individual fractions.`;
+                    break;
+            }
+            
+            feedback.innerHTML = explanation;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

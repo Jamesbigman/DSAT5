@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic System of Equations Question</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <style>
+        /* General styling for body, headings, containers, etc. */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        .question-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+        }
+        .question-text {
+            font-size: 1.1em;
+            color: #444;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .equation {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: inline-block; /* To make it appear as a block with padding */
+        }
+        .options-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .option-label {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            cursor: pointer; /* Cursor indicates it's clickable */
+            transition: background-color 0.3s ease;
+        }
+        .option-label:hover {
+            background-color: #dee2e6; /* Hover effect re-enabled */
+        }
+        .option-label input[type="radio"] {
+            margin-right: 10px;
+            /* Radio buttons are now interactive */
+            pointer-events: auto;
+            opacity: 1;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 0 1 auto;
+            min-width: 180px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Modal/Dialog Box Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-message {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .modal-close-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+        .modal-close-button:hover {
+            background-color: #0056b3;
+        }
+        /* Feedback styles for modal messages */
+        .modal-message.correct {
+            color: #28a745;
+        }
+        .modal-message.incorrect {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic System of Equations Question</h1>
+    
+    <div class="question-container">
+        <p class="question-text">
+            The graph of a system of a linear equation and a nonlinear equation is shown below. What is the solution (x, y) to this system?
+        </p>
+        <p class="equation" id="linearEquation"></p>
+        <p class="equation" id="quadraticEquation"></p>
+
+        <div class="options-container" id="optionsContainer">
+            </div>
+    </div>
+    
+    <!-- Modal/Dialog Box Structure -->
+    <div id="feedbackModalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <p id="modalMessage" class="modal-message"></p>
+            <button id="modalCloseButton" class="modal-close-button">Close</button>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Function to format equation terms
+        function formatTerm(coeff, variable, power = 1) {
+            if (coeff === 0) return '';
+            let term = '';
+            if (coeff === 1 && variable) {
+                term += '';
+            } else if (coeff === -1 && variable) {
+                term += '-';
+            } else {
+                term += coeff;
+            }
+
+            if (variable) {
+                term += variable;
+                if (power > 1) {
+                    term += `<sup>${power}</sup>`;
+                }
+            }
+            return term;
+        }
+
+        function formatEquation(a, b, c, isLinear = false) {
+            let eq = 'y = ';
+            if (isLinear) {
+                if (a === 0) { // y = b
+                    eq += b;
+                } else { // y = mx + b
+                    if (a !== 1 && a !== -1) eq += a;
+                    else if (a === -1) eq += '-';
+                    eq += 'x';
+                    if (b > 0) eq += ` + ${b}`;
+                    else if (b < 0) eq += ` - ${Math.abs(b)}`;
+                }
+            } else { // quadratic y = ax^2 + bx + c
+                // ax^2 term
+                if (a !== 1 && a !== -1) eq += `${a}x<sup>2</sup>`;
+                else if (a === 1) eq += `x<sup>2</sup>`;
+                else eq += `-x<sup>2</sup>`;
+
+                // bx term
+                if (b > 0) {
+                    eq += ` + `;
+                    if (b !== 1) eq += b;
+                    eq += `x`;
+                } else if (b < 0) {
+                    eq += ` - `;
+                    if (b !== -1) eq += Math.abs(b);
+                    eq += `x`;
+                }
+
+                // c term
+                if (c > 0) eq += ` + ${c}`;
+                else if (c < 0) eq += ` - ${Math.abs(c)}`;
+            }
+            return eq;
+        }
+
+        function generateQuestion() {
+            document.getElementById('feedbackModalOverlay').classList.remove('show'); // Hide modal
+            document.getElementById('optionsContainer').innerHTML = ''; // Clear previous options
+
+            // 1. Choose two distinct integer x-coordinates for intersection points
+            let x_sol1 = getRandomInt(-3, 3);
+            let x_sol2;
+            do {
+                x_sol2 = getRandomInt(-3, 3);
+            } while (x_sol2 === x_sol1);
+
+            // 2. Define the linear equation y = m_lin * x + b_lin
+            const m_lin = getRandomInt(-2, 2); // Slope
+            const b_lin = getRandomInt(-5, 5); // Y-intercept
+            
+            // Ensure linear equation is not y=0 for all x (m_lin and b_lin not both 0)
+            if (m_lin === 0 && b_lin === 0) {
+                b_lin = getRandomInt(1, 5); // Make it y = constant
+            }
+
+            // 3. Calculate the corresponding y-coordinates for intersection points
+            const y_sol1 = m_lin * x_sol1 + b_lin;
+            const y_sol2 = m_lin * x_sol2 + b_lin;
+
+            // 4. Generate a_quad (leading coefficient for quadratic)
+            let a_quad;
+            do {
+                a_quad = getRandomInt(-1, 1);
+            } while (a_quad === 0);
+
+            // 5. Formulate the quadratic equation based on roots and linear offset
+            // y_quad = a_quad * (x - x_sol1)(x - x_sol2) + (m_lin * x + b_lin)
+            // Expand: a_quad * (x^2 - (x_sol1 + x_sol2)x + x_sol1 * x_sol2) + m_lin * x + b_lin
+            // y_quad = a_quad * x^2 + (m_lin - a_quad * (x_sol1 + x_sol2)) * x + (b_lin + a_quad * x_sol1 * x_sol2)
+
+            const b_quad = m_lin - a_quad * (x_sol1 + x_sol2);
+            const c_quad = b_lin + a_quad * x_sol1 * x_sol2;
+
+            // Store equations as strings
+            const linearEqString = formatEquation(m_lin, b_lin, 0, true);
+            const quadraticEqString = formatEquation(a_quad, b_quad, c_quad, false);
+
+            document.getElementById('linearEquation').innerHTML = `1) ${linearEqString}`;
+            document.getElementById('quadraticEquation').innerHTML = `2) ${quadraticEqString}`;
+
+            const correctSolutions = [
+                `(${x_sol1}, ${y_sol1})`,
+                `(${x_sol2}, ${y_sol2})`
+            ].sort(); // Sort to ensure consistent order for comparison
+
+            // Generate multiple-choice options
+            let options = [];
+
+            // Correct option
+            options.push({ text: `(${x_sol1}, ${y_sol1}) and (${x_sol2}, ${y_sol2})`, isCorrect: true });
+
+            // Incorrect option 1: Only one solution
+            options.push({ text: `(${x_sol1}, ${y_sol1}) only`, isCorrect: false });
+
+            // Incorrect option 2: Only the other solution
+            options.push({ text: `(${x_sol2}, ${y_sol2}) only`, isCorrect: false });
+
+            // Incorrect option 3: A random point or a point on one equation but not the other
+            let x_rand, y_rand;
+            do {
+                x_rand = getRandomInt(-5, 5);
+                y_rand = getRandomInt(-10, 10);
+                // Ensure it's not one of the correct solutions
+            } while ((x_rand === x_sol1 && y_rand === y_sol1) || (x_rand === x_sol2 && y_rand === y_sol2));
+
+            options.push({ text: `(${x_rand}, ${y_rand})`, isCorrect: false });
+
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+
+            // Populate options in HTML
+            const optionsContainer = document.getElementById('optionsContainer');
+            options.forEach((option, index) => {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                // Radio buttons are now interactive
+                label.innerHTML = `<input type="radio" name="solution" value="${option.text}" data-correct="${option.isCorrect}"> ${option.text}`;
+                optionsContainer.appendChild(label);
+            });
+
+            currentQuestion = {
+                linearEq: linearEqString,
+                quadraticEq: quadraticEqString,
+                correctSolutions: correctSolutions.join(' and '), // Store as a string for easy comparison
+            };
+        }
+
+        function showFeedbackModal(message, isCorrect) {
+            const modalOverlay = document.getElementById('feedbackModalOverlay');
+            const modalMessage = document.getElementById('modalMessage');
+
+            modalMessage.textContent = message;
+            modalMessage.className = 'modal-message ' + (isCorrect ? 'correct' : 'incorrect');
+            modalOverlay.classList.add('show');
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModalOverlay').classList.remove('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+            document.getElementById('modalCloseButton').addEventListener('click', closeFeedbackModal);
+
+            // Event listener for option selection
+            document.getElementById('optionsContainer').addEventListener('change', function(event) {
+                if (event.target.name === 'solution') {
+                    const selectedOption = event.target;
+                    const isCorrect = selectedOption.dataset.correct === 'true';
+                    const selectedText = selectedOption.value;
+
+                    let message;
+                    if (isCorrect) {
+                        message = `Correct! The solution to the system is ${currentQuestion.correctSolutions}.`;
+                    } else {
+                        message = `Incorrect. You selected ${selectedText}, but the correct solution is ${currentQuestion.correctSolutions}.`;
+                    }
+                    showFeedbackModal(message, isCorrect);
+                }
+            });
+
+            document.getElementById('exportPDF').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.text('System of Equations Problem', 105, 20, {align: 'center'});
+                
+                doc.setFontSize(12);
+                doc.text('The graph of a system of a linear equation and a nonlinear equation is shown below. What is the solution (x, y) to this system?', 20, 30, {maxWidth: 170});
+                
+                doc.text(`1) ${currentQuestion.linearEq.replace(/<[^>]*>/g, '')}`, 20, 50); // Remove HTML tags for PDF
+                doc.text(`2) ${currentQuestion.quadraticEq.replace(/<[^>]*>/g, '')}`, 20, 60); // Remove HTML tags for PDF
+                
+                doc.setFontSize(12);
+                doc.text(`Correct Solution: ${currentQuestion.correctSolutions}`, 20, 80);
+                
+                doc.save('System_of_Equations_Problem.pdf');
+            });
+
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>

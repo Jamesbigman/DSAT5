@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trigonometry Problem Generator</title>
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Polyfill for older browser compatibility -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <!-- MathJax for rendering mathematical equations -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* Basic body styling for font, max-width, centering, padding, line height, and background */
+        body {
+            font-family: 'Inter', Arial, sans-serif; /* Using Inter font as per instructions */
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+            border-radius: 8px; /* Applying rounded corners to the body for consistency */
+        }
+        /* Styling for the main heading */
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px; /* Rounded corners */
+        }
+        /* Container for the question text */
+        .question-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px; /* Rounded corners */
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08); /* Subtle shadow for depth */
+            border: 1px solid #e0e0e0;
+        }
+        /* Styling for the actual question text */
+        .question-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #444;
+            text-align: center;
+        }
+        /* Grid layout for the multiple-choice options */
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns */
+            gap: 15px; /* Spacing between options */
+            margin: 25px 0;
+        }
+        /* Styling for individual option boxes */
+        .option {
+            padding: 15px;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for hover and selection */
+            background-color: #fefefe;
+            text-align: center;
+            font-size: 1.1em;
+            color: #555;
+        }
+        /* Hover effect for options */
+        .option:hover {
+            background-color: #e9f5ff;
+            border-color: #a0d0ff;
+            transform: translateY(-3px); /* Slight lift effect */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        /* Styling for the selected option */
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #28a745;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.2);
+            color: #155724;
+            transform: translateY(0); /* Reset lift if selected */
+        }
+        /* Flexbox for buttons to center and space them */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        /* General button styling */
+        button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            flex: 0 1 auto; /* Allow buttons to size content, but not grow excessively */
+            min-width: 180px; /* Ensure a minimum width for better appearance */
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Shadow for buttons */
+        }
+        /* Specific styling for the 'Generate New Question' button */
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Specific styling for the 'Export as PDF' button */
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Styling for feedback messages (correct/incorrect) */
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px; /* Rounded corners */
+            display: none; /* Hidden by default */
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 6px solid #28a745; /* Green left border for correct */
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid #dc3545; /* Red left border for incorrect */
+        }
+        /* Styling for the solution steps container - Now hidden by default and not shown */
+        .solution-steps {
+            display: none; /* This section is now permanently hidden */
+        }
+        /* Styling for mathematical expressions (MathJax) */
+        .math {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trigonometry Problem Generator</h1>
+    
+    <div class="question-container">
+        <!-- The question text will be dynamically updated by JavaScript -->
+        <p class="question-text" id="questionText">What is the value of <span class="math">\(\tan\left(\frac{92\pi}{3}\right)\)</span>?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <!-- Options will be dynamically populated and updated by JavaScript -->
+        <div class="option" data-value="A"><span class="math" id="optionA"></span></div>
+        <div class="option" data-value="B"><span class="math" id="optionB"></span></div>
+        <div class="option" data-value="C"><span class="math" id="optionC"></span></div>
+        <div class="option" data-value="D"><span class="math" id="optionD"></span></div>
+    </div>
+    
+    <!-- Feedback message (correct/incorrect) -->
+    <div class="feedback" id="feedback"></div>
+    
+    <!-- Solution steps section - Removed from display -->
+    <!-- <div class="solution-steps" id="solutionSteps">
+        <h3>Solution Steps:</h3>
+        <div class="step" id="step1"><span class="step-number">1</span> <span id="step1Text"></span></div>
+        <div class="step" id="step2"><span class="step-number">2</span> <span id="step2Text"></span></div>
+        <div class="step" id="step3"><span class="step-number">3</span> <span id="step3Text"></span></div>
+        <div class="step" id="step4"><span class="step-number">4</span> <span id="step4Text"></span></div>
+        <div class="step" id="step5"><span class="step-number">5</span> <span id="step5Text"></span></div>
+    </div> -->
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Helper function to calculate Greatest Common Divisor (GCD)
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        // Helper function to simplify a fraction [numerator, denominator]
+        function simplifyFraction(numerator, denominator) {
+            if (numerator === 0) return [0, 1]; // Handle case where numerator is 0
+            const common = gcd(Math.abs(numerator), Math.abs(denominator));
+            return [numerator / common, denominator / common];
+        }
+
+        // Define common tangent values and their MathJax/plain text representations
+        const tanValues = [
+            { value: 0, mathJax: '0', plainText: '0' },
+            { value: 1 / Math.sqrt(3), mathJax: '\\(\\frac{\\sqrt{3}}{3}\\)', plainText: 'sqrt(3)/3' },
+            { value: 1, mathJax: '\\(1\\)', plainText: '1' },
+            { value: Math.sqrt(3), mathJax: '\\(\\sqrt{3}\\)', plainText: 'sqrt(3)' },
+            { value: -1 / Math.sqrt(3), mathJax: '\\(-\\frac{\\sqrt{3}}{3}\\)', plainText: '-sqrt(3)/3' },
+            { value: -1, mathJax: '\\(-1\\)', plainText: '-1' },
+            { value: -Math.sqrt(3), mathJax: '\\(-\\sqrt{3}\\)', plainText: '-sqrt(3)' },
+        ];
+
+        // Define base angles (in [0, pi/2]) that produce the above tan values
+        const baseAngles = [
+            { n: 0, d: 1, tanValueIndex: 0 }, // tan(0) = 0
+            { n: 1, d: 6, tanValueIndex: 1 }, // tan(pi/6) = 1/sqrt(3)
+            { n: 1, d: 4, tanValueIndex: 2 }, // tan(pi/4) = 1
+            { n: 1, d: 3, tanValueIndex: 3 }, // tan(pi/3) = sqrt(3)
+        ];
+
+        // Object to store current question data
+        let currentQuestion = {};
+
+        /**
+         * Generates a new trigonometry question.
+         * It selects a random base angle, adds a large multiple of pi to the angle
+         * to create a more complex-looking fraction, and then sets up the question,
+         * options, and solution steps.
+         */
+        function generateQuestion() {
+            // Clear previous selection and hide feedback/solution sections
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            // Removed: document.getElementById('solutionSteps').style.display = 'none';
+
+            // Pick a random base angle from the predefined list
+            const baseAngle = baseAngles[Math.floor(Math.random() * baseAngles.length)];
+
+            // Generate a random large multiple to add to the numerator.
+            // This makes the angle look more complex, e.g., 92pi/3 instead of 2pi/3.
+            const largeMultiple = Math.floor(Math.random() * 50) + 1; // Random integer from 1 to 50
+            const finalNumerator = baseAngle.n + largeMultiple * baseAngle.d;
+            const finalDenominator = baseAngle.d;
+
+            // Determine the correct answer's MathJax and plain text representation
+            const correctTanValue = tanValues[baseAngle.tanValueIndex];
+
+            // Store the current question's properties
+            currentQuestion = {
+                numerator: finalNumerator,
+                denominator: finalDenominator,
+                correctAnswerMathJax: correctTanValue.mathJax,
+                correctAnswerPlainText: correctTanValue.plainText,
+                baseAngleInfo: baseAngle // Store base angle info for solution steps
+            };
+
+            // Update the question text in the HTML
+            document.getElementById('questionText').innerHTML = `What is the value of \\(\\tan\\left(\\frac{${finalNumerator}\\pi}{${finalDenominator}}\\right)\\)?`;
+
+            // Generate and display the multiple-choice options
+            generateOptions();
+
+            // Removed: generateSolutionSteps(); // No longer generating solution steps
+
+            // Render any new MathJax equations on the page
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typesetPromise().then(() => {
+                    // MathJax has rendered, safe to proceed if needed
+                });
+            }
+        }
+
+        /**
+         * Generates the multiple-choice options for the current question.
+         * It includes the correct answer and three random distractors.
+         */
+        function generateOptions() {
+            const options = {};
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            
+            // Set the first option as the correct answer initially
+            options[optionLetters[0]] = currentQuestion.correctAnswerMathJax;
+            options.correctOption = optionLetters[0];
+
+            // Generate three unique distractors
+            const distractors = [];
+            const usedValues = new Set([currentQuestion.correctAnswerPlainText]); // Keep track of values already used
+
+            while (distractors.length < 3) {
+                const randomTanValue = tanValues[Math.floor(Math.random() * tanValues.length)];
+                // Ensure the distractor is not the same as the correct answer and is unique among distractors
+                if (!usedValues.has(randomTanValue.plainText)) {
+                    distractors.push(randomTanValue.mathJax);
+                    usedValues.add(randomTanValue.plainText);
+                }
+            }
+
+            // Assign the generated distractors to the remaining options
+            for (let i = 1; i < optionLetters.length; i++) {
+                options[optionLetters[i]] = distractors[i - 1];
+            }
+
+            // Shuffle the options to randomize the position of the correct answer
+            const shuffledOptions = shuffleOptions(options, optionLetters);
+
+            // Update the HTML elements with the shuffled options
+            document.getElementById('optionA').innerHTML = shuffledOptions.A;
+            document.getElementById('optionB').innerHTML = shuffledOptions.B;
+            document.getElementById('optionC').innerHTML = shuffledOptions.C;
+            document.getElementById('optionD').innerHTML = shuffledOptions.D;
+
+            // Store the letter of the correct option after shuffling
+            currentQuestion.correctAnswerLetter = shuffledOptions.correctOption;
+        }
+
+        /**
+         * Shuffles the order of options while keeping track of which option is correct.
+         * @param {Object} options - An object containing MathJax strings for options A, B, C, D, and the correctOption letter.
+         * @param {string[]} optionLetters - An array of option letters (e.g., ['A', 'B', 'C', 'D']).
+         * @returns {Object} An object with shuffled option MathJax strings and the new correctOption letter.
+         */
+        function shuffleOptions(options, optionLetters) {
+            const values = optionLetters.map(letter => options[letter]); // Get the MathJax strings of the options
+            const correctValue = options[options.correctOption]; // Get the MathJax string of the correct answer
+            
+            // Fisher-Yates shuffle algorithm
+            for (let i = values.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [values[i], values[j]] = [values[j], values[i]]; // Swap elements
+            }
+            
+            // Find the new index of the correct value after shuffling
+            const newCorrectIndex = values.indexOf(correctValue);
+            const newCorrectOption = optionLetters[newCorrectIndex]; // Get the new letter for the correct option
+            
+            // Create a new object with the shuffled options and the updated correct option letter
+            const shuffledOptions = {
+                A: values[0],
+                B: values[1],
+                C: values[2],
+                D: values[3],
+                correctOption: newCorrectOption
+            };
+            
+            return shuffledOptions;
+        }
+
+        // Removed: generateSolutionSteps function is no longer needed
+
+        // Event listener for when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click listeners to each option
+            document.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove 'selected' class from all options
+                    document.querySelectorAll('.option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    // Add 'selected' class to the clicked option
+                    this.classList.add('selected');
+                    
+                    const selectedValueLetter = this.getAttribute('data-value'); // Get the data-value (A, B, C, D)
+                    const feedback = document.getElementById('feedback');
+                    // Removed: const solutionSteps = document.getElementById('solutionSteps');
+                    
+                    // Check if the selected answer is correct
+                    if (selectedValueLetter === currentQuestion.correctAnswerLetter) {
+                        feedback.innerHTML = `✅ <strong>Correct!</strong> The value of \\(\\tan\\left(\\frac{${currentQuestion.numerator}\\pi}{${currentQuestion.denominator}}\\right)\\) is ${currentQuestion.correctAnswerMathJax}.`;
+                        feedback.className = 'feedback correct'; // Apply correct feedback styling
+                    } else {
+                        const selectedOptionText = document.getElementById(`option${selectedValueLetter}`).textContent;
+                        feedback.innerHTML = `❌ <strong>Incorrect.</strong> You selected ${selectedOptionText}, but the correct answer is ${currentQuestion.correctAnswerMathJax}.`;
+                        feedback.className = 'feedback incorrect'; // Apply incorrect feedback styling
+                    }
+                    feedback.style.display = 'block'; // Show feedback
+                    // Removed: solutionSteps.style.display = 'block'; // No longer showing solution steps
+
+                    // Re-render MathJax in feedback section to ensure proper display
+                    if (typeof MathJax !== 'undefined') {
+                        MathJax.typesetPromise([feedback]).then(() => {
+                            // MathJax has rendered
+                        });
+                    }
+                });
+            });
+
+            // Event listener for the 'Generate New Question' button
+            document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+            // Event listener for the 'Export as PDF' button
+            document.getElementById('exportPDF').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add title to the PDF
+                doc.setFontSize(18);
+                doc.text('Trigonometry Problem: Tangent Value', 105, 20, {align: 'center'});
+                
+                // Add question text to the PDF
+                doc.setFontSize(12);
+                const questionText = `What is the value of tan(${currentQuestion.numerator}π/${currentQuestion.denominator})?`;
+                doc.text(questionText, 20, 30);
+                
+                // Add options (converting MathJax to plain text for PDF)
+                doc.text('Options:', 20, 50);
+                const optionA_text = document.getElementById('optionA').textContent;
+                const optionB_text = document.getElementById('optionB').textContent;
+                const optionC_text = document.getElementById('optionC').textContent;
+                const optionD_text = document.getElementById('optionD').textContent;
+
+                doc.text(`A) ${optionA_text}`, 30, 60);
+                doc.text(`B) ${optionB_text}`, 30, 70);
+                doc.text(`C) ${optionC_text}`, 30, 80);
+                doc.text(`D) ${optionD_text}`, 30, 90);
+                
+                // Removed: Logic for adding solution steps to PDF
+                
+                // Save the generated PDF file
+                doc.save('Tangent_Problem.pdf');
+            });
+
+            // Generate the first question when the page loads
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Equation Generator</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Line Equation Problem</h1>
+    
+    <div class="question-container">
+        <p>Line ( r ) in the xy-plane has a slope of <span id="slope">4</span> and passes through the point 
+           (0, <span id="y-intercept">6</span>). Which equation defines line ( r )?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A)  y = <span id="optionA">-6x + 4</span> </div>
+        <div class="option" data-value="B">B)  y = <span id="optionB">6x + 4</span> </div>
+        <div class="option" data-value="C">C)  y = <span id="optionC">4x - 6</span> </div>
+        <div class="option" data-value="D">D)  y = <span id="optionD">4x + 6</span> </div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <button id="newQuestion">Generate New Question</button>
+
+    <script>
+        // Current question data
+        let currentQuestion = {
+            slope: 4,
+            yIntercept: 6,
+            correctAnswer: 'D'
+        };
+
+        // Generate new random question
+        function generateQuestion() {
+            // Clear previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Generate random values (slope between -8 and 8, y-intercept between -10 and 10)
+            currentQuestion.slope = Math.floor(Math.random() * 16) - 8;
+            if (currentQuestion.slope === 0) currentQuestion.slope = 1; // Ensure non-zero slope
+            currentQuestion.yIntercept = Math.floor(Math.random() * 20) - 10;
+            
+            // Update question text
+            document.getElementById('slope').textContent = currentQuestion.slope;
+            document.getElementById('y-intercept').textContent = currentQuestion.yIntercept;
+            
+            // Generate incorrect options
+            const incorrectOptions = [
+                `-${Math.abs(currentQuestion.yIntercept)}x + ${Math.abs(currentQuestion.slope)}`,
+                `${Math.abs(currentQuestion.yIntercept)}x + ${Math.abs(currentQuestion.slope)}`,
+                `${currentQuestion.slope}x - ${Math.abs(currentQuestion.yIntercept)}`
+            ];
+            
+            // Shuffle options (keeping correct answer in position D)
+            const options = [...incorrectOptions];
+            options.splice(Math.floor(Math.random() * 3), 0, `${currentQuestion.slope}x + ${currentQuestion.yIntercept}`);
+            
+            // Update options display
+            document.getElementById('optionA').textContent = options[0];
+            document.getElementById('optionB').textContent = options[1];
+            document.getElementById('optionC').textContent = options[2];
+            document.getElementById('optionD').textContent = options[3];
+            
+            // Determine correct answer position
+            currentQuestion.correctAnswer = String.fromCharCode(65 + options.indexOf(`${currentQuestion.slope}x + ${currentQuestion.yIntercept}`));
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Check answer and provide feedback
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ Correct! The equation is \( y = ${currentQuestion.slope}x + ${currentQuestion.yIntercept} \)`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    feedback.innerHTML = `❌ Incorrect. The correct equation is \( y = ${currentQuestion.slope}x + ${currentQuestion.yIntercept} \)`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+                
+                // Re-render MathJax
+                if (typeof MathJax !== 'undefined') {
+                    MathJax.typeset();
+                }
+            });
+        });
+
+        // Generate new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Initialize MathJax on load
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

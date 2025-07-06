@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Table Question</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- MathJax for rendering mathematical expressions -->
+    <script>
+        // Configure MathJax to process inline math with $...$ delimiters
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px; /* Adjusted max-width for table-based question */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .table-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: auto;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden; /* Ensures rounded corners apply to table */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+            color: #333;
+        }
+        td {
+            color: #555;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .options-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+        .options-list li {
+            margin-bottom: 10px;
+            padding: 8px 0;
+            font-size: 1.1em;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        .options-list input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2); /* Make radio buttons slightly larger */
+        }
+        .feedback-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .feedback-incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Function Analysis Question</h1>
+
+        <div class="question-section">
+            <p class="text-lg text-gray-700 mb-4" id="question-intro-text">
+                The table shows selected values from function $f$.
+            </p>
+
+            <div class="table-container">
+                <table id="function-table">
+                    <thead>
+                        <tr>
+                            <th>$x$</th>
+                            <th>$f(x)$</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Table rows will be dynamically generated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-lg text-gray-700 mb-4" id="question-text">
+                Which of the following is the best description of function $f$?
+            </p>
+
+            <form id="answer-form">
+                <ul class="options-list" id="options-list">
+                    <!-- Options will be dynamically generated here -->
+                </ul>
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                    <button type="button" class="btn btn-secondary" onclick="generateNewQuestion()">Generate New Question</button>
+                    <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+                </div>
+            </form>
+            <div id="feedback-message" class="feedback-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const questionIntroTextElement = document.getElementById('question-intro-text');
+        const tableBodyElement = document.getElementById('table-body');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsListElement = document.getElementById('options-list');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+
+        let currentQuestion = {}; // Stores the current question's data (correct answer)
+
+        // Function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Function to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        /**
+         * Generates a linear function and its table values.
+         * @param {number} startX - The starting x-value for the table.
+         * @param {number} numPoints - Number of points to generate.
+         * @param {number} slope - The slope of the linear function.
+         * @param {number} yIntercept - The y-intercept of the linear function.
+         * @returns {Array<object>} An array of {x, f(x)} pairs.
+         */
+        function generateLinearFunction(startX, numPoints, slope, yIntercept) {
+            const points = [];
+            for (let i = 0; i < numPoints; i++) {
+                const x = startX + i;
+                const fx = slope * x + yIntercept;
+                points.push({ x: x, fx: fx });
+            }
+            return points;
+        }
+
+        /**
+         * Generates an exponential function and its table values.
+         * @param {number} startX - The starting x-value for the table.
+         * @param {number} numPoints - Number of points to generate.
+         * @param {number} base - The base of the exponential function.
+         * @param {number} multiplier - Multiplier for the exponential function.
+         * @returns {Array<object>} An array of {x, f(x)} pairs.
+         */
+        function generateExponentialFunction(startX, numPoints, base, multiplier) {
+            const points = [];
+            for (let i = 0; i < numPoints; i++) {
+                const x = startX + i;
+                // Ensure fx values are integers for simplicity in table display
+                const fx = Math.round(multiplier * Math.pow(base, x));
+                points.push({ x: x, fx: fx });
+            }
+            return points;
+        }
+
+        // Function to generate a new question
+        function generateNewQuestion() {
+            // Clear previous feedback
+            feedbackMessageElement.classList.add('hidden');
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            // Determine if it's linear or exponential
+            const isLinear = Math.random() < 0.5; // 50% chance for linear, 50% for exponential
+            let points = [];
+            let correctDescription = '';
+
+            const startX = getRandomInt(-2, 0); // Start x values around 0
+            const numPoints = 4; // Always 4 points in the table
+
+            if (isLinear) {
+                const slope = getRandomInt(-3, 3);
+                const yIntercept = getRandomInt(10, 20); // Y-intercept for larger values
+                points = generateLinearFunction(startX, numPoints, slope, yIntercept);
+
+                if (slope > 0) {
+                    correctDescription = 'Increasing linear';
+                } else if (slope < 0) {
+                    correctDescription = 'Decreasing linear';
+                } else { // slope is 0 (constant linear), regenerate to avoid
+                    generateNewQuestion();
+                    return;
+                }
+            } else { // Exponential
+                const base = getRandomInt(2, 3); // Base 2 or 3
+                const multiplier = getRandomInt(1, 5); // Multiplier for initial value
+                points = generateExponentialFunction(startX, numPoints, base, multiplier);
+
+                // Check for increasing/decreasing based on base
+                if (base > 1) { // Assuming positive multiplier
+                    correctDescription = 'Increasing exponential';
+                } else if (base > 0 && base < 1) { // If base is fractional (e.g. 0.5)
+                     correctDescription = 'Decreasing exponential';
+                } else { // Invalid base, regenerate
+                    generateNewQuestion();
+                    return;
+                }
+            }
+
+            // Populate the table
+            tableBodyElement.innerHTML = '';
+            points.forEach(point => {
+                const row = document.createElement('tr');
+                // MathJax will render the $...$ content in table cells
+                row.innerHTML = `<td>$${point.x}$</td><td>$${point.fx}$</td>`;
+                tableBodyElement.appendChild(row);
+            });
+
+            // Set the question text
+            questionTextElement.innerHTML = `Which of the following is the best description of function $f$?`;
+
+            // Generate options
+            let options = [
+                'Increasing linear',
+                'Decreasing linear',
+                'Increasing exponential',
+                'Decreasing exponential'
+            ];
+
+            // Filter out the correct one and ensure it's present
+            options = options.filter(opt => opt !== correctDescription);
+            shuffleArray(options); // Shuffle distractors
+            options.splice(getRandomInt(0, 3), 0, correctDescription); // Insert correct answer randomly
+
+            // Store the current question data
+            currentQuestion = {
+                correct: correctDescription
+            };
+
+            // Update options in the DOM
+            optionsListElement.innerHTML = '';
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            options.forEach((optionText, index) => {
+                const li = document.createElement('li');
+                const optionId = `option-${optionLetters[index]}`;
+                li.innerHTML = `
+                    <input type="radio" id="${optionId}" name="answer" value="${optionText}">
+                    <label for="${optionId}">${optionLetters[index]}) ${optionText}</label>
+                `;
+                optionsListElement.appendChild(li);
+            });
+
+            // Trigger MathJax typesetting for the question intro text, table headers, and table body
+            if (window.MathJax) {
+                MathJax.typesetPromise([
+                    questionIntroTextElement,
+                    document.querySelector('#function-table thead'),
+                    tableBodyElement
+                ]).catch(function (err) {
+                    console.error('MathJax typesetting failed:', err);
+                });
+            }
+        }
+
+        // Function to submit the answer
+        function submitAnswer() {
+            const selectedOption = document.querySelector('input[name="answer"]:checked');
+            if (selectedOption) {
+                const userAnswer = selectedOption.value;
+                if (userAnswer === currentQuestion.correct) {
+                    feedbackMessageElement.textContent = 'Correct Answer!';
+                    feedbackMessageElement.classList.remove('hidden', 'feedback-incorrect');
+                    feedbackMessageElement.classList.add('feedback-correct');
+                } else {
+                    feedbackMessageElement.textContent = `Incorrect. The correct answer was "${currentQuestion.correct}".`;
+                    feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                    feedbackMessageElement.classList.add('feedback-incorrect');
+                }
+            } else {
+                feedbackMessageElement.textContent = 'Please select an answer.';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            }
+        }
+
+        // Function to export content as PDF
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export'); // Element to capture
+
+            const canvas = await html2canvas(element, {
+                scale: 1, // Optimized for smaller PDF file size
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with quality 0.8
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save('function_table_question.pdf');
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            generateNewQuestion(); // Generate the first question when the page loads
+        };
+    </script>
+</body>
+</html>

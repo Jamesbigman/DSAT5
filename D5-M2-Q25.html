@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Exponential Growth Question</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .function-display {
+            font-size: 20px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+            border: 1px solid #ccc;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .option-content {
+            font-size: 18px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+        
+        .fraction {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 2px;
+        }
+        
+        .numerator {
+            border-bottom: 1px solid black;
+            padding-bottom: 2px;
+        }
+        
+        .denominator {
+            padding-top: 2px;
+        }
+        
+        .superscript {
+            font-size: 14px;
+            vertical-align: super;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="function-display" id="functionDisplay">
+            <!-- Function will be generated here -->
+        </div>
+        
+        <div class="question-text" id="questionText">
+            <!-- Question text will be generated here -->
+        </div>
+        
+        <div class="options" id="options">
+            <!-- Options will be generated here -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function createFraction(numerator, denominator) {
+            return `<div class="fraction"><div class="numerator">${numerator}</div><div class="denominator">${denominator}</div></div>`;
+        }
+
+        function generateQuestion() {
+            const questionTypes = [
+                'find_period_from_growth_rate',
+                'find_growth_rate_from_period',
+                'find_initial_value',
+                'find_time_for_population'
+            ];
+            
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+            
+            // Generate base parameters
+            const initialValue = [100, 150, 200, 250, 300, 350, 400, 450, 500, 750, 1000][Math.floor(Math.random() * 11)];
+            const growthRates = [0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.15]; // 2% to 15%
+            const growthRate = growthRates[Math.floor(Math.random() * growthRates.length)];
+            const periods = [3, 4, 6, 8, 12, 18, 24, 36]; // Common periods in months
+            
+            let functionDisplay, questionText, correctAnswer, wrongAnswers, baseNumber, exponentPart;
+            
+            switch(questionType) {
+                case 'find_period_from_growth_rate':
+                    const period = periods[Math.floor(Math.random() * periods.length)];
+                    baseNumber = (1 + growthRate).toFixed(2);
+                    exponentPart = createFraction(`${period}`, 'n');
+                    functionDisplay = `P(t) = ${initialValue}(${baseNumber})<sup>${exponentPart}</sup>`;
+                    
+                    const contexts = [
+                        { unit: 'thousands', subject: 'a certain city', growthPercent: Math.round(growthRate * 100) },
+                        { unit: 'bacteria', subject: 'a culture', growthPercent: Math.round(growthRate * 100) },
+                        { unit: 'dollars', subject: 'an investment', growthPercent: Math.round(growthRate * 100) },
+                        { unit: 'users', subject: 'a social media platform', growthPercent: Math.round(growthRate * 100) }
+                    ];
+                    
+                    const context = contexts[Math.floor(Math.random() * contexts.length)];
+                    questionText = `The function P models the population, in ${context.unit}, of ${context.subject} t years after 2020. According to the model, the population is predicted to increase by ${context.growthPercent}% every n months. What is the value of n?`;
+                    
+                    correctAnswer = period;
+                    wrongAnswers = periods.filter(p => p !== period).slice(0, 3);
+                    break;
+                    
+                case 'find_growth_rate_from_period':
+                    const fixedPeriod = periods[Math.floor(Math.random() * periods.length)];
+                    baseNumber = (1 + growthRate).toFixed(2);
+                    exponentPart = createFraction(`${fixedPeriod}`, 't');
+                    functionDisplay = `P(t) = ${initialValue}(${baseNumber})<sup>${exponentPart}</sup>`;
+                    
+                    questionText = `The function P models the population, in thousands, of a city t months after 2020. According to the model, the population increases by r% every ${fixedPeriod} months. What is the value of r?`;
+                    
+                    correctAnswer = Math.round(growthRate * 100);
+                    wrongAnswers = growthRates.filter(gr => Math.round(gr * 100) !== correctAnswer)
+                        .slice(0, 3).map(gr => Math.round(gr * 100));
+                    break;
+                    
+                case 'find_initial_value':
+                    const testPeriod = periods[Math.floor(Math.random() * periods.length)];
+                    baseNumber = (1 + growthRate).toFixed(2);
+                    exponentPart = createFraction(`${testPeriod}`, 't');
+                    functionDisplay = `P(t) = A(${baseNumber})<sup>${exponentPart}</sup>`;
+                    
+                    questionText = `The function P models the population, in thousands, of a city t months after 2020. The population was ${initialValue} thousand in 2020. What is the value of A?`;
+                    
+                    correctAnswer = initialValue;
+                    wrongAnswers = [100, 150, 200, 250, 300, 350, 400, 450, 500, 750, 1000]
+                        .filter(val => val !== initialValue).slice(0, 3);
+                    break;
+                    
+                case 'find_time_for_population':
+                    const timePeriod = periods[Math.floor(Math.random() * periods.length)];
+                    baseNumber = (1 + growthRate).toFixed(2);
+                    exponentPart = createFraction(`${timePeriod}`, 't');
+                    functionDisplay = `P(t) = ${initialValue}(${baseNumber})<sup>${exponentPart}</sup>`;
+                    
+                    const targetMultiplier = [1.5, 2, 2.5, 3][Math.floor(Math.random() * 4)];
+                    const targetPopulation = Math.round(initialValue * targetMultiplier);
+                    
+                    // Calculate approximate time
+                    const timeNeeded = Math.round(timePeriod * Math.log(targetMultiplier) / Math.log(1 + growthRate));
+                    
+                    questionText = `The function P models the population, in thousands, of a city t months after 2020. Approximately how many months will it take for the population to reach ${targetPopulation} thousand?`;
+                    
+                    correctAnswer = timeNeeded;
+                    wrongAnswers = [
+                        Math.round(timeNeeded * 0.5),
+                        Math.round(timeNeeded * 1.5),
+                        Math.round(timeNeeded * 2)
+                    ].filter(val => val !== timeNeeded);
+                    break;
+            }
+            
+            // Create options array and shuffle
+            const options = [correctAnswer, ...wrongAnswers.slice(0, 3)].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                functionDisplay,
+                questionText,
+                correctAnswer,
+                options,
+                correctIndex: options.indexOf(correctAnswer),
+                questionType,
+                growthRate,
+                initialValue,
+                baseNumber
+            };
+        }
+
+        function displayQuestion() {
+            const functionDisplayDiv = document.getElementById('functionDisplay');
+            const questionTextDiv = document.getElementById('questionText');
+            const optionsDiv = document.getElementById('options');
+            
+            functionDisplayDiv.innerHTML = currentQuestion.functionDisplay;
+            questionTextDiv.innerHTML = currentQuestion.questionText;
+            
+            // Display options
+            optionsDiv.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span class="option-content">${option}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Select new option
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> You correctly identified the relationship between the exponential function parameters and the growth pattern.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> Remember to analyze the base and exponent of the exponential function carefully.
+                    <br>• The base (1 + r) represents the growth factor
+                    <br>• The exponent's coefficient determines the time period
+                    <br>• The coefficient A represents the initial value
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            
+            let explanation = '<strong>Complete Solution:</strong><br>';
+            
+            switch(currentQuestion.questionType) {
+                case 'find_period_from_growth_rate':
+                    explanation += `The base ${currentQuestion.baseNumber} = 1 + ${Math.round((currentQuestion.baseNumber - 1) * 100)}% = 1 + ${(currentQuestion.baseNumber - 1).toFixed(2)}<br>`;
+                    explanation += `This means the population grows by ${Math.round((currentQuestion.baseNumber - 1) * 100)}% every n months.<br>`;
+                    explanation += `From the exponent (${currentQuestion.correctAnswer}/n), we see that n = ${currentQuestion.correctAnswer} months.`;
+                    break;
+                case 'find_growth_rate_from_period':
+                    explanation += `The base ${currentQuestion.baseNumber} = 1 + r (in decimal form)<br>`;
+                    explanation += `So r = ${currentQuestion.baseNumber} - 1 = ${(currentQuestion.baseNumber - 1).toFixed(2)}<br>`;
+                    explanation += `Converting to percentage: r = ${currentQuestion.correctAnswer}%`;
+                    break;
+                case 'find_initial_value':
+                    explanation += `The initial value A represents the population at t = 0 (in 2020).<br>`;
+                    explanation += `Since the population was ${currentQuestion.correctAnswer} thousand in 2020, A = ${currentQuestion.correctAnswer}.`;
+                    break;
+                case 'find_time_for_population':
+                    explanation += `Set up the equation: ${currentQuestion.options[currentQuestion.correctIndex]} = ${currentQuestion.initialValue}(${currentQuestion.baseNumber})^(period/t)<br>`;
+                    explanation += `Solve for t using logarithms to find the approximate time.`;
+                    break;
+            }
+            
+            feedback.innerHTML = explanation;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

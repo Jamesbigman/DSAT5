@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Function Value Question</title>
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Polyfill for older browser compatibility -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <style>
+        /* Basic body styling */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+            border-radius: 8px;
+        }
+        /* Main heading styling */
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        /* Question container styling */
+        .question-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+        }
+        /* Question text styling */
+        .question-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        /* Input field styling */
+        .input-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #answerInput {
+            padding: 10px 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            width: 150px;
+            text-align: center;
+            transition: border-color 0.3s ease;
+        }
+        #answerInput:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        /* Buttons container styling */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        /* General button styling */
+        button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 0 1 auto;
+            min-width: 180px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        /* Specific button styling */
+        #checkAnswer {
+            background-color: #007bff;
+        }
+        #checkAnswer:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Feedback message styling */
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 6px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic Function Value Problem</h1>
+    
+    <div class="question-container">
+        <p class="question-text" id="questionText">
+            The function g is defined by g(x) = (x + 14)(t - x), where t is a constant. In the xy-plane, the graph of y = g(x) passes through the point (24, 0). What is the value of g(0)?
+        </p>
+        <div class="input-area">
+            <input type="number" id="answerInput" placeholder="Your Answer">
+            <button id="checkAnswer">Check Answer</button>
+        </div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Object to store current question data
+        let currentQuestion = {};
+
+        /**
+         * Generates a random integer within a specified range.
+         * @param {number} min - The minimum value (inclusive).
+         * @param {number} max - The maximum value (inclusive).
+         * @returns {number} A random integer.
+         */
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates a new function value problem.
+         * It creates a quadratic function in factored form, determines a point it passes through,
+         * and then asks for the value of g(0).
+         */
+        function generateQuestion() {
+            // Clear previous input and hide feedback
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('answerInput').style.borderColor = '#ccc'; // Reset border color
+
+            // Generate random values for the constants
+            const c1 = getRandomInt(5, 20); // Constant in the first factor (e.g., 14 in the example)
+            let x_pass; // The x-coordinate of the point the graph passes through (e.g., 24)
+            do {
+                x_pass = getRandomInt(-20, 20);
+            } while (x_pass === -c1); // Ensure x_pass is not a root if -c1 is a root
+
+            // The function is g(x) = (x + c1)(t - x)
+            // The graph passes through (x_pass, 0), so g(x_pass) = 0
+            // (x_pass + c1)(t - x_pass) = 0
+            // Since x_pass + c1 is not 0 (due to the do-while loop), then t - x_pass must be 0.
+            // So, t = x_pass
+
+            const t_val = x_pass;
+
+            // The question asks for g(0)
+            // g(0) = (0 + c1)(t - 0) = c1 * t
+            const correctAnswer = c1 * t_val;
+
+            // Construct the question text (removed dollar signs)
+            const questionText = `The function g is defined by g(x) = (x + ${c1})(t - x), where t is a constant. In the xy-plane, the graph of y = g(x) passes through the point (${x_pass}, 0). What is the value of g(0)?`;
+
+            // Store the current question's properties
+            currentQuestion = {
+                c1: c1,
+                x_pass: x_pass,
+                t_val: t_val,
+                questionText: questionText,
+                correctAnswer: correctAnswer
+            };
+
+            // Update the HTML element with the new question
+            document.getElementById('questionText').textContent = questionText;
+        }
+
+        /**
+         * Checks the user's answer and provides feedback.
+         */
+        function checkAnswer() {
+            const userAnswer = parseFloat(document.getElementById('answerInput').value);
+            const feedback = document.getElementById('feedback');
+            const answerInput = document.getElementById('answerInput');
+
+            if (isNaN(userAnswer)) {
+                feedback.innerHTML = `Please enter a number.`;
+                feedback.className = 'feedback incorrect';
+                feedback.style.display = 'block';
+                answerInput.style.borderColor = '#dc3545'; // Red border for invalid input
+                return;
+            }
+
+            if (userAnswer === currentQuestion.correctAnswer) {
+                feedback.innerHTML = `✅ <strong>Correct!</strong> The value of g(0) is ${currentQuestion.correctAnswer}.`;
+                feedback.className = 'feedback correct';
+                answerInput.style.borderColor = '#28a745'; // Green border for correct
+            } else {
+                feedback.innerHTML = `❌ <strong>Incorrect.</strong> Your answer was ${userAnswer}, but the correct value of g(0) is ${currentQuestion.correctAnswer}.`;
+                feedback.className = 'feedback incorrect';
+                answerInput.style.borderColor = '#dc3545'; // Red border for incorrect
+            }
+            feedback.style.display = 'block';
+        }
+
+        // Event listener for when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click listener to the 'Check Answer' button
+            document.getElementById('checkAnswer').addEventListener('click', checkAnswer);
+
+            // Allow checking answer on 'Enter' key press in the input field
+            document.getElementById('answerInput').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+
+            // Add click listener to the 'Generate New Question' button
+            document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+            // Event listener for the 'Export as PDF' button
+            document.getElementById('exportPDF').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add title to the PDF
+                doc.setFontSize(18);
+                doc.text('Function Value Problem', 105, 20, {align: 'center'});
+                
+                // Add question text to the PDF
+                doc.setFontSize(12);
+                const questionTextContent = `The function g is defined by g(x) = (x + ${currentQuestion.c1})(t - x), where t is a constant. In the xy-plane, the graph of y = g(x) passes through the point (${currentQuestion.x_pass}, 0). What is the value of g(0)?`;
+                const questionTextLines = doc.splitTextToSize(questionTextContent, 170);
+                doc.text(questionTextLines, 20, 30);
+                
+                // Add the correct answer to the PDF
+                doc.setFontSize(12);
+                doc.text(`Correct Answer: ${currentQuestion.correctAnswer}`, 20, 70);
+                
+                // Save the generated PDF file
+                doc.save('Function_Value_Problem.pdf');
+            });
+
+            // Generate the first question when the page loads
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>

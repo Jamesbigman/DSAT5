@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebraic Expression Generator</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #000000;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 2px solid #000000;
+        }
+
+        .question-container {
+            background: #ffffff;
+            border: 3px solid #000000;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .question-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .question {
+            font-size: 1.4em;
+            margin-bottom: 25px;
+            font-weight: 500;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .expression {
+            font-size: 1.6em;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option {
+            background: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #000000;
+        }
+
+        .option:hover {
+            background: #f0f0f0;
+            border-color: #000000;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .option.correct {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .option.incorrect {
+            background: #666666;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: #ffffff;
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #cccccc;
+            color: #666666;
+            border-color: #cccccc;
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feedback.show {
+            opacity: 1;
+        }
+
+        .feedback.correct {
+            background: #f0f0f0;
+            color: #000000;
+            border: 2px solid #000000;
+        }
+
+        .feedback.incorrect {
+            background: #e0e0e0;
+            color: #000000;
+            border: 2px solid #000000;
+        }
+
+        .solution {
+            background: #f8f8f8;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #000000;
+        }
+
+        .superscript {
+            font-size: 0.7em;
+            vertical-align: super;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .question {
+                font-size: 1.2em;
+            }
+            
+            .expression {
+                font-size: 1.4em;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="question-container">
+            <div class="question" id="question">Which expression is equivalent to</div>
+            <div class="expression" id="expression"></div>
+            <div class="options" id="options"></div>
+        </div>
+        
+        <div class="buttons">
+            <button id="checkBtn" onclick="checkAnswer()" disabled>Check Answer</button>
+            <button id="newQuestionBtn" onclick="generateNewQuestion()">Generate New Question</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+
+        function generateNewQuestion() {
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('checkBtn').disabled = true;
+            document.getElementById('feedback').classList.remove('show');
+            
+            // Generate random coefficients and constants
+            const variables = ['x', 'y', 'z'];
+            const variable = variables[Math.floor(Math.random() * variables.length)];
+            
+            // Generate first polynomial: a*x^3 + b
+            const a1 = Math.floor(Math.random() * 9) + 2; // 2-10
+            const b1 = Math.floor(Math.random() * 19) + 1; // 1-19
+            
+            // Generate second polynomial: c*x^3 + d
+            const a2 = Math.floor(Math.random() * 9) + 2; // 2-10
+            const b2 = Math.floor(Math.random() * 19) + 1; // 1-19
+            
+            // Calculate the correct answer: (a1 - a2)*x^3 + (b1 - b2)
+            const correctA = a1 - a2;
+            const correctB = b1 - b2;
+            
+            // Generate the expression
+            const expression = `(${a1}${variable}<span class="superscript">3</span> + ${b1}) - (${a2}${variable}<span class="superscript">3</span> + ${b2})`;
+            
+            // Create correct answer
+            let correctAnswer;
+            if (correctA === 1) {
+                correctAnswer = `${variable}<span class="superscript">3</span> + ${correctB}`;
+            } else if (correctA === -1) {
+                correctAnswer = `-${variable}<span class="superscript">3</span> + ${correctB}`;
+            } else {
+                correctAnswer = `${correctA}${variable}<span class="superscript">3</span> + ${correctB}`;
+            }
+            
+            // Handle negative constants
+            if (correctB < 0) {
+                correctAnswer = correctAnswer.replace(` + ${correctB}`, ` - ${Math.abs(correctB)}`);
+            }
+            
+            // Generate wrong answers
+            const wrongAnswers = [];
+            
+            // Wrong answer 1: Add instead of subtract
+            const wrong1A = a1 + a2;
+            const wrong1B = b1 + b2;
+            let wrong1 = `${wrong1A}${variable}<span class="superscript">3</span> + ${wrong1B}`;
+            
+            // Wrong answer 2: Different coefficient
+            const wrong2A = correctA + (Math.random() > 0.5 ? 1 : -1);
+            const wrong2B = correctB;
+            let wrong2 = `${wrong2A}${variable}<span class="superscript">3</span> + ${wrong2B}`;
+            if (wrong2B < 0) {
+                wrong2 = wrong2.replace(` + ${wrong2B}`, ` - ${Math.abs(wrong2B)}`);
+            }
+            
+            // Wrong answer 3: Different constant
+            const wrong3A = correctA;
+            const wrong3B = correctB + (Math.random() > 0.5 ? 2 : -2);
+            let wrong3 = `${wrong3A}${variable}<span class="superscript">3</span> + ${wrong3B}`;
+            if (wrong3B < 0) {
+                wrong3 = wrong3.replace(` + ${wrong3B}`, ` - ${Math.abs(wrong3B)}`);
+            }
+            
+            wrongAnswers.push(wrong1, wrong2, wrong3);
+            
+            // Create options array
+            const options = [correctAnswer, ...wrongAnswers];
+            
+            // Shuffle options
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            
+            // Store current question data
+            currentQuestion = {
+                expression: expression,
+                correctAnswer: correctAnswer,
+                options: options,
+                variable: variable,
+                a1: a1,
+                b1: b1,
+                a2: a2,
+                b2: b2,
+                correctA: correctA,
+                correctB: correctB,
+                explanation: `To subtract polynomials, distribute the negative sign: (${a1}${variable}³ + ${b1}) - (${a2}${variable}³ + ${b2}) = ${a1}${variable}³ + ${b1} - ${a2}${variable}³ - ${b2}. Combine like terms: (${a1} - ${a2})${variable}³ + (${b1} - ${b2}) = ${correctA}${variable}³ + ${correctB}.`
+            };
+            
+            // Display expression
+            document.getElementById('expression').innerHTML = expression;
+            
+            // Display options
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            const letters = ['A', 'B', 'C', 'D'];
+            options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.innerHTML = `${letters[index]}) ${option}`;
+                optionElement.onclick = () => selectOption(index, optionElement);
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        function selectOption(index, element) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selection to clicked option
+            element.classList.add('selected');
+            selectedOption = index;
+            
+            // Enable check button
+            document.getElementById('checkBtn').disabled = false;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null || answered) return;
+            
+            answered = true;
+            
+            const options = document.querySelectorAll('.option');
+            const correctIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+            
+            // Show correct answer
+            options[correctIndex].classList.add('correct');
+            
+            // Check if selected answer is correct
+            if (selectedOption === correctIndex) {
+                showFeedback(true, "Correct!");
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                showFeedback(false, "Incorrect.");
+            }
+            
+            // Disable check button
+            document.getElementById('checkBtn').disabled = true;
+        }
+
+        function showFeedback(isCorrect, message) {
+            const feedback = document.getElementById('feedback');
+            feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedback.innerHTML = `
+                <div>${message}</div>
+                <div class="solution">
+                    <strong>Solution:</strong> ${currentQuestion.explanation}
+                </div>
+            `;
+            feedback.classList.add('show');
+        }
+
+        // Generate initial question
+        generateNewQuestion();
+    </script>
+</body>
+</html>

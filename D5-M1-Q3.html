@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Film Club Membership Growth</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Film Club Membership Growth</h1>
+    
+    <div class="question-container">
+        <p id="questionText">On the first day of a semester, a film club has <span class="highlight" id="initialMembers">90</span> members. Each day after the first day of the semester, <span class="highlight" id="dailyIncrease">10</span> new members join the film club. If no members leave the film club, how many total members will the film club have <span class="highlight" id="daysAfter">4</span> days after the first day of the semester?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) <span id="optionA">400</span></div>
+        <div class="option" data-value="B">B) <span id="optionB">130</span></div>
+        <div class="option" data-value="C">C) <span id="optionC">94</span></div>
+        <div class="option" data-value="D">D) <span id="optionD">90</span></div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Current question data
+        let currentQuestion = {
+            initialMembers: 0,
+            dailyIncrease: 0,
+            daysAfter: 0,
+            correctAnswer: '',
+            correctValue: 0
+        };
+
+        // Generate random question
+        function generateQuestion() {
+            // Clear previous selection and feedback
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Generate random values (multiples of 5 or 10 for simplicity)
+            currentQuestion.initialMembers = Math.floor(Math.random() * 5 + 8) * 10; // 80-120
+            currentQuestion.dailyIncrease = Math.floor(Math.random() * 4 + 1) * 5; // 5-20
+            currentQuestion.daysAfter = Math.floor(Math.random() * 4) + 3; // 3-6 days
+            
+            // Calculate correct answer
+            currentQuestion.correctValue = currentQuestion.initialMembers + (currentQuestion.dailyIncrease * currentQuestion.daysAfter);
+            
+            // Update question text
+            document.getElementById('initialMembers').textContent = currentQuestion.initialMembers;
+            document.getElementById('dailyIncrease').textContent = currentQuestion.dailyIncrease;
+            document.getElementById('daysAfter').textContent = currentQuestion.daysAfter;
+            
+            // Generate options - one correct and three plausible distractors
+            const options = generateOptions(currentQuestion.correctValue);
+            
+            // Update options display
+            document.getElementById('optionA').textContent = options.A;
+            document.getElementById('optionB').textContent = options.B;
+            document.getElementById('optionC').textContent = options.C;
+            document.getElementById('optionD').textContent = options.D;
+            
+            // Store correct answer
+            currentQuestion.correctAnswer = options.correctOption;
+        }
+
+        // Generate options with one correct answer and three distractors
+        function generateOptions(correctValue) {
+            const options = {};
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            
+            // Correct answer
+            options[optionLetters[0]] = correctValue;
+            options.correctOption = optionLetters[0];
+            
+            // Generate distractors
+            const distractors = [];
+            
+            // Distractor 1: Only initial members
+            distractors.push(correctValue - (currentQuestion.dailyIncrease * currentQuestion.daysAfter));
+            
+            // Distractor 2: Initial + one day's growth
+            distractors.push(correctValue - (currentQuestion.dailyIncrease * (currentQuestion.daysAfter - 1)));
+            
+            // Distractor 3: Initial + daily increase (misunderstanding the question)
+            distractors.push(currentQuestion.initialMembers + currentQuestion.dailyIncrease);
+            
+            // Shuffle distractors
+            for (let i = distractors.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
+            }
+            
+            // Assign distractors to remaining options
+            for (let i = 1; i < optionLetters.length; i++) {
+                options[optionLetters[i]] = distractors[i - 1];
+            }
+            
+            // Shuffle options
+            const shuffledOptions = shuffleOptions(options, optionLetters);
+            
+            return shuffledOptions;
+        }
+
+        // Shuffle options while keeping track of correct answer
+        function shuffleOptions(options, optionLetters) {
+            const values = optionLetters.map(letter => options[letter]);
+            
+            // Shuffle values
+            for (let i = values.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [values[i], values[j]] = [values[j], values[i]];
+            }
+            
+            // Find where the correct value moved
+            const newCorrectIndex = values.indexOf(options[options.correctOption]);
+            const newCorrectOption = optionLetters[newCorrectIndex];
+            
+            // Create new options object
+            const shuffledOptions = {
+                A: values[0],
+                B: values[1],
+                C: values[2],
+                D: values[3],
+                correctOption: newCorrectOption
+            };
+            
+            return shuffledOptions;
+        }
+
+        // Event listeners for options
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.textContent = `Correct! After ${currentQuestion.daysAfter} days with ${currentQuestion.dailyIncrease} new members each day, the film club will have ${currentQuestion.correctValue} members.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    const selectedOptionValue = document.getElementById(`option${selectedValue}`).textContent;
+                    feedback.textContent = `Incorrect. You selected ${selectedOptionValue}, but the correct answer is ${currentQuestion.correctValue}.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+            });
+        });
+
+        // Event listener for new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Event listener for export PDF button
+        document.getElementById('exportPDF').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Film Club Membership Growth', 105, 20, {align: 'center'});
+            
+            // Add question text
+            doc.setFontSize(12);
+            const questionLines = doc.splitTextToSize(
+                `On the first day of a semester, a film club has ${currentQuestion.initialMembers} members. Each day after the first day of the semester, ${currentQuestion.dailyIncrease} new members join the film club. If no members leave the film club, how many total members will the film club have ${currentQuestion.daysAfter} days after the first day of the semester?`, 
+                180
+            );
+            doc.text(questionLines, 20, 30);
+            
+            // Add options
+            doc.text('Options:', 20, 70);
+            doc.text(`A) ${document.getElementById('optionA').textContent}`, 30, 80);
+            doc.text(`B) ${document.getElementById('optionB').textContent}`, 30, 90);
+            doc.text(`C) ${document.getElementById('optionC').textContent}`, 30, 100);
+            doc.text(`D) ${document.getElementById('optionD').textContent}`, 30, 110);
+            
+            // Add solution
+            doc.setFontSize(14);
+            doc.text('Solution:', 20, 130);
+            doc.setFontSize(12);
+            doc.text(`Initial members: ${currentQuestion.initialMembers}`, 30, 140);
+            doc.text(`Daily increase: ${currentQuestion.dailyIncrease} members/day`, 30, 150);
+            doc.text(`Number of days: ${currentQuestion.daysAfter}`, 30, 160);
+            doc.text(`Total new members: ${currentQuestion.dailyIncrease} × ${currentQuestion.daysAfter} = ${currentQuestion.dailyIncrease * currentQuestion.daysAfter}`, 30, 170);
+            doc.text(`Total members: ${currentQuestion.initialMembers} + ${currentQuestion.dailyIncrease * currentQuestion.daysAfter} = ${currentQuestion.correctValue}`, 30, 180);
+            
+            // Save the PDF
+            doc.save('Film_Club_Membership_Question.pdf');
+        });
+
+        // Generate the first question
+        generateQuestion();
+    </script>
+</body>
+</html>

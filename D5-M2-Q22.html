@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Geometry Question</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-container::before {
+            display: none;
+        }
+        
+        .question-header {
+            display: none;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option::before {
+            display: none;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn::before {
+            display: none;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: black;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: black;
+        }
+        
+        .btn-success {
+            background: white;
+            color: black;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .feedback.correct {
+            background: white;
+            border: 2px solid black;
+            color: black;
+        }
+        
+        .feedback.incorrect {
+            background: white;
+            border: 2px solid black;
+            color: black;
+        }
+        
+        .rectangle-display {
+            display: none;
+        }
+        
+        .rectangle {
+            border: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #667eea;
+            position: relative;
+            background: rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .rectangle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .rectangle-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-header">
+            <div class="question-number">Q1</div>
+            <div class="question-title">Similar Rectangles Problem</div>
+        </div>
+        
+        <div class="question-text" id="questionText">
+            <!-- Question will be generated here -->
+        </div>
+        
+        <div class="rectangle-display" id="rectangleDisplay">
+            <!-- Rectangles will be displayed here -->
+        </div>
+        
+        <div class="options" id="options">
+            <!-- Options will be generated here -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn btn-secondary" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn btn-success" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function generateQuestion() {
+            // Generate random scale factor (2-8)
+            const scaleFactor = Math.floor(Math.random() * 7) + 2;
+            
+            // Generate random dimensions for first rectangle
+            const rect1Width = Math.floor(Math.random() * 8) + 3;
+            const rect1Height = Math.floor(Math.random() * 8) + 3;
+            const rect1Area = rect1Width * rect1Height;
+            
+            // Calculate second rectangle dimensions
+            const rect2Width = rect1Width * scaleFactor;
+            const rect2Height = rect1Height * scaleFactor;
+            const rect2Area = rect2Width * rect2Height;
+            
+            // Generate rectangle names
+            const names1 = ['ABCD', 'PQRS', 'WXYZ', 'MNOP', 'JKLM'];
+            const names2 = ['EFGH', 'STUV', 'DEFG', 'ABEF', 'QRST'];
+            const rect1Name = names1[Math.floor(Math.random() * names1.length)];
+            const rect2Name = names2[Math.floor(Math.random() * names2.length)];
+            
+            // Generate wrong answers
+            const correctAnswer = rect2Area;
+            const wrongAnswers = [
+                rect1Area * scaleFactor, // Common mistake: multiply by scale factor instead of scale factor squared
+                rect1Area * scaleFactor * 2, // Another common mistake
+                rect1Area + rect2Area, // Adding instead of finding just rect2 area
+                Math.floor(correctAnswer * 0.8), // Close but wrong
+                Math.floor(correctAnswer * 1.2) // Close but wrong
+            ].filter(answer => answer !== correctAnswer && answer > 0);
+            
+            // Select 3 wrong answers
+            const selectedWrong = wrongAnswers.sort(() => 0.5 - Math.random()).slice(0, 3);
+            
+            // Create options array
+            const options = [correctAnswer, ...selectedWrong].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                rect1Name,
+                rect2Name,
+                rect1Width,
+                rect1Height,
+                rect1Area,
+                rect2Width,
+                rect2Height,
+                rect2Area,
+                scaleFactor,
+                correctAnswer,
+                options,
+                correctIndex: options.indexOf(correctAnswer)
+            };
+        }
+
+        function displayQuestion() {
+            const questionText = document.getElementById('questionText');
+            const optionsDiv = document.getElementById('options');
+            
+            questionText.innerHTML = `
+                Rectangles <strong>${currentQuestion.rect1Name}</strong> and <strong>${currentQuestion.rect2Name}</strong> are similar. 
+                The length of each side of <strong>${currentQuestion.rect2Name}</strong> is ${currentQuestion.scaleFactor} times the length of the 
+                corresponding side of <strong>${currentQuestion.rect1Name}</strong>. The area of <strong>${currentQuestion.rect1Name}</strong> is 
+                ${currentQuestion.rect1Area} square units. What is the area, in square units, of <strong>${currentQuestion.rect2Name}</strong>?
+            `;
+            
+            // Display options
+            optionsDiv.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span>${option.toLocaleString()}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Select new option
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback correct show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> When rectangles are similar with a scale factor of ${currentQuestion.scaleFactor}, 
+                    the area is multiplied by the square of the scale factor: ${currentQuestion.rect1Area} × ${currentQuestion.scaleFactor}² = 
+                    ${currentQuestion.rect1Area} × ${currentQuestion.scaleFactor * currentQuestion.scaleFactor} = ${currentQuestion.correctAnswer} square units.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback incorrect show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> The correct answer is ${currentQuestion.correctAnswer}. 
+                    When rectangles are similar, the area scales by the square of the linear scale factor. 
+                    Since each side is ${currentQuestion.scaleFactor} times longer, the area is ${currentQuestion.scaleFactor}² = ${currentQuestion.scaleFactor * currentQuestion.scaleFactor} times larger.
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            feedback.innerHTML = `
+                <strong>Complete Solution:</strong><br>
+                • Rectangle ${currentQuestion.rect1Name}: Area = ${currentQuestion.rect1Area} square units<br>
+                • Rectangle ${currentQuestion.rect2Name}: Area = ${currentQuestion.rect2Area} square units<br>
+                • Scale factor: ${currentQuestion.scaleFactor}<br>
+                • Area scale factor: ${currentQuestion.scaleFactor}² = ${currentQuestion.scaleFactor * currentQuestion.scaleFactor}<br>
+                • Final answer: ${currentQuestion.rect1Area} × ${currentQuestion.scaleFactor * currentQuestion.scaleFactor} = ${currentQuestion.correctAnswer} square units
+            `;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

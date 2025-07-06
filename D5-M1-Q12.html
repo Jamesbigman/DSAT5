@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inequality Problem Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .snowfall-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            transition: background-color 0.3s;
+        }
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+        }
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+        .solution-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            display: none;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            margin-right: 10px;
+            line-height: 25px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .math {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snowfall Inequality Problem</h1>
+    
+    <div class="question-container">
+        <div class="snowfall-info">
+            <p>For a snowstorm in a certain town, the minimum rate of snowfall recorded was <span class="highlight">0.6 inches per hour</span>, and the maximum rate of snowfall recorded was <span class="highlight">1.8 inches per hour</span>.</p>
+            <p>Which inequality is true for all values of \( s \), where \( s \) represents a rate of snowfall, in inches per hour, recorded for this snowstorm?</p>
+        </div>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) <span class="math" id="optionA">\( s \geq 2.4 \)</span></div>
+        <div class="option" data-value="B">B) <span class="math" id="optionB">\( s \geq 1.8 \)</span></div>
+        <div class="option" data-value="C">C) <span class="math" id="optionC">\( 0 \leq s \leq 0.6 \)</span></div>
+        <div class="option" data-value="D">D) <span class="math" id="optionD">\( 0.6 \leq s \leq 1.8 \)</span></div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="solution-steps" id="solutionSteps">
+        <h3>Solution Steps:</h3>
+        <div class="step" id="step1"><span class="step-number">1</span> <span id="step1Text"></span></div>
+        <div class="step" id="step2"><span class="step-number">2</span> <span id="step2Text"></span></div>
+        <div class="step" id="step3"><span class="step-number">3</span> <span id="step3Text"></span></div>
+    </div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Current question data
+        let currentQuestion = {
+            minRate: 0.6,
+            maxRate: 1.8,
+            correctAnswer: 'D',
+            options: [
+                { value: 's ≥ 2.4', tex: 's \\geq 2.4' },
+                { value: 's ≥ 1.8', tex: 's \\geq 1.8' },
+                { value: '0 ≤ s ≤ 0.6', tex: '0 \\leq s \\leq 0.6' },
+                { value: '0.6 ≤ s ≤ 1.8', tex: '0.6 \\leq s \\leq 1.8' }
+            ]
+        };
+
+        // Generate random snowfall problem
+        function generateQuestion() {
+            // Clear previous selection and feedback
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('solutionSteps').style.display = 'none';
+            
+            // Generate random rates (keeping realistic values)
+            const minRate = (Math.floor(Math.random() * 10) + 5) / 10; // 0.5 to 1.4
+            const maxRate = minRate + (Math.floor(Math.random() * 15) + 5) / 10; // 0.5-2.0 above min
+            
+            currentQuestion.minRate = minRate;
+            currentQuestion.maxRate = maxRate;
+            
+            // Update question display
+            document.querySelector('.snowfall-info p:first-child').innerHTML = 
+                `For a snowstorm in a certain town, the minimum rate of snowfall recorded was <span class="highlight">${minRate} inches per hour</span>, and the maximum rate of snowfall recorded was <span class="highlight">${maxRate} inches per hour</span>.`;
+            
+            // Generate options
+            generateOptions(minRate, maxRate);
+            
+            // Generate solution steps
+            generateSolutionSteps(minRate, maxRate);
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Generate options with one correct answer and three distractors
+        function generateOptions(minRate, maxRate) {
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            
+            // Correct answer
+            const correctOption = { 
+                value: `${minRate} ≤ s ≤ ${maxRate}`, 
+                tex: `${minRate} \\leq s \\leq ${maxRate}` 
+            };
+            
+            // Generate distractors
+            const distractors = [
+                { value: `s ≥ ${maxRate + 0.6}`, tex: `s \\geq ${maxRate + 0.6}` },
+                { value: `s ≥ ${maxRate}`, tex: `s \\geq ${maxRate}` },
+                { value: `0 ≤ s ≤ ${minRate}`, tex: `0 \\leq s \\leq ${minRate}` },
+                { value: `${minRate - 0.2} ≤ s ≤ ${maxRate}`, tex: `${minRate - 0.2} \\leq s \\leq ${maxRate}` }
+            ];
+            
+            // Shuffle distractors and select 3
+            for (let i = distractors.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [distractors[i], distractors[j]] = [distractors[j], distractors[i]];
+            }
+            const selectedDistractors = distractors.slice(0, 3);
+            
+            // Combine all options
+            const allOptions = [correctOption, ...selectedDistractors];
+            
+            // Shuffle all options
+            for (let i = allOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
+            }
+            
+            // Update the options display
+            document.getElementById('optionA').innerHTML = `\\(${allOptions[0].tex}\\)`;
+            document.getElementById('optionB').innerHTML = `\\(${allOptions[1].tex}\\)`;
+            document.getElementById('optionC').innerHTML = `\\(${allOptions[2].tex}\\)`;
+            document.getElementById('optionD').innerHTML = `\\(${allOptions[3].tex}\\)`;
+            
+            // Store correct answer
+            const correctIndex = allOptions.findIndex(opt => opt.value === correctOption.value);
+            currentQuestion.correctAnswer = optionLetters[correctIndex];
+        }
+
+        // Generate step-by-step solution
+        function generateSolutionSteps(minRate, maxRate) {
+            const step1 = `The minimum snowfall rate was ${minRate} inches/hour and the maximum was ${maxRate} inches/hour.`;
+            const step2 = `This means all recorded snowfall rates (s) must be between these two values.`;
+            const step3 = `Therefore, the correct inequality is: \\(${minRate} \\leq s \\leq ${maxRate}\\)`;
+            
+            document.getElementById('step1Text').textContent = step1;
+            document.getElementById('step2Text').textContent = step2;
+            document.getElementById('step3Text').innerHTML = step3;
+        }
+
+        // Event listeners for options
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                const solutionSteps = document.getElementById('solutionSteps');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ <strong>Correct!</strong> The snowfall rates must be between ${currentQuestion.minRate} and ${currentQuestion.maxRate} inches per hour.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    const selectedOption = document.getElementById(`option${selectedValue}`).textContent;
+                    feedback.innerHTML = `❌ <strong>Incorrect.</strong> You selected ${selectedOption}, but the correct answer is \\(${currentQuestion.minRate} \\leq s \\leq ${currentQuestion.maxRate}\\).`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+                solutionSteps.style.display = 'block';
+            });
+        });
+
+        // Event listener for new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Event listener for export PDF button
+        document.getElementById('exportPDF').addEventListener('click', function() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Snowfall Inequality Problem', 105, 20, {align: 'center'});
+            
+            // Add question text
+            doc.setFontSize(12);
+            doc.text(`For a snowstorm, the minimum snowfall rate was ${currentQuestion.minRate} inches/hour`, 20, 30);
+            doc.text(`and the maximum rate was ${currentQuestion.maxRate} inches/hour. Which inequality`, 20, 40);
+            doc.text(`represents all possible snowfall rates (s) for this storm?`, 20, 50);
+            
+            // Add options
+            doc.text('Options:', 20, 70);
+            doc.text(`A) ${document.getElementById('optionA').textContent.replace(/\\/g, '')}`, 30, 80);
+            doc.text(`B) ${document.getElementById('optionB').textContent.replace(/\\/g, '')}`, 30, 90);
+            doc.text(`C) ${document.getElementById('optionC').textContent.replace(/\\/g, '')}`, 30, 100);
+            doc.text(`D) ${document.getElementById('optionD').textContent.replace(/\\/g, '')}`, 30, 110);
+            
+            // Add solution steps
+            doc.setFontSize(14);
+            doc.text('Solution Steps:', 20, 130);
+            doc.setFontSize(12);
+            
+            const steps = [
+                `1. Minimum rate: ${currentQuestion.minRate} in/hr, Maximum rate: ${currentQuestion.maxRate} in/hr`,
+                `2. All rates must be between these two values`,
+                `3. Correct inequality: ${currentQuestion.minRate} ≤ s ≤ ${currentQuestion.maxRate}`
+            ];
+            
+            steps.forEach((step, index) => {
+                doc.text(step, 30, 140 + (index * 10));
+            });
+            
+            // Save the PDF
+            doc.save('Snowfall_Inequality_Problem.pdf');
+        });
+
+        // Generate the first question
+        generateQuestion();
+    </script>
+</body>
+</html>

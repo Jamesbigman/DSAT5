@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Algebra Question</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid black;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-text">
+            If 6n = 12, what is the value of n + 4?
+        </div>
+        
+        <input type="text" class="answer-input" id="answerInput" placeholder="Enter your answer here">
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()">Submit Answer</button>
+            <button class="btn" onclick="showSolution()">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim();
+            const feedback = document.getElementById('feedback');
+            
+            if (userAnswer === '6') {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = '<strong>Correct!</strong> Well done. You solved the equation correctly.';
+            } else {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = '<strong>Incorrect.</strong> Try solving the equation step by step.';
+            }
+        }
+        
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            feedback.innerHTML = `
+                <strong>Solution:</strong><br>
+                1. Start with the equation: 6n = 12<br>
+                2. Divide both sides by 6: n = 12 ÷ 6<br>
+                3. Simplify: n = 2<br>
+                4. Now calculate n + 4: 2 + 4 = 6<br>
+                <br>
+                The correct answer is <strong>6</strong>.
+            `;
+        }
+    </script>
+</body>
+</html>

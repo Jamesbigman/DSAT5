@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabbit Calorie Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            transition: background-color 0.3s;
+        }
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+        }
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+        .solution-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            display: none;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            margin-right: 10px;
+            line-height: 25px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .math {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rabbit Calorie Calculator</h1>
+    
+    <div class="question-container">
+        <p>A veterinarian recommends that each day a certain rabbit should eat 
+           <span id="calPerPound">25</span> calories per pound of the rabbit's weight, 
+           plus an additional <span id="extraCal">11</span> calories.</p>
+        <p>Which equation represents this situation, where \( c \) is the total number of calories 
+           the veterinarian recommends the rabbit should eat each day if the rabbit's weight 
+           is \( x \) pounds?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) ( c = <span id="optionA">25x</span> )</div>
+        <div class="option" data-value="B">B) ( c = <span id="optionB">36x</span> )</div>
+        <div class="option" data-value="C">C) ( c = <span id="optionC">11x + 25</span> )</div>
+        <div class="option" data-value="D">D) ( c = <span id="optionD">25x + 11</span> )</div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="solution-steps" id="solutionSteps">
+        <h3>Solution Steps:</h3>
+        <div class="step" id="step1"><span class="step-number">1</span> <span id="step1Text"></span></div>
+        <div class="step" id="step2"><span class="step-number">2</span> <span id="step2Text"></span></div>
+        <div class="step" id="step3"><span class="step-number">3</span> <span id="step3Text"></span></div>
+    </div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Current question data
+        let currentQuestion = {
+            calPerPound: 25,
+            extraCal: 11,
+            correctAnswer: 'D',
+            options: [
+                { equation: '25x', tex: '25x' },
+                { equation: '36x', tex: '36x' },
+                { equation: '11x + 25', tex: '11x + 25' },
+                { equation: '25x + 11', tex: '25x + 11' }
+            ]
+        };
+
+        // Generate random calorie recommendation problem
+        function generateQuestion() {
+            // Clear previous selection and feedback
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('solutionSteps').style.display = 'none';
+            
+            // Generate random values (multiples of 5 for calories per pound, 1-20 for extra calories)
+            const calPerPound = Math.floor(Math.random() * 10 + 1) * 5;
+            const extraCal = Math.floor(Math.random() * 20) + 1;
+            
+            currentQuestion = {
+                calPerPound: calPerPound,
+                extraCal: extraCal,
+                correctAnswer: 'D', // Always the same format (mx + b)
+                options: generateOptions(calPerPound, extraCal)
+            };
+            
+            // Update display
+            document.getElementById('calPerPound').textContent = calPerPound;
+            document.getElementById('extraCal').textContent = extraCal;
+            
+            // Update options
+            document.getElementById('optionA').textContent = currentQuestion.options[0].tex;
+            document.getElementById('optionB').textContent = currentQuestion.options[1].tex;
+            document.getElementById('optionC').textContent = currentQuestion.options[2].tex;
+            document.getElementById('optionD').textContent = currentQuestion.options[3].tex;
+            
+            // Generate solution steps
+            generateSolutionSteps();
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Generate options with one correct answer and three distractors
+        function generateOptions(calPerPound, extraCal) {
+            const options = [];
+            const correctIndex = 3; // Option D is always correct in this format
+            
+            // Generate distractors
+            const distractors = [
+                { equation: `${calPerPound}x`, tex: `${calPerPound}x` }, // Just the per-pound calories
+                { equation: `${calPerPound + extraCal}x`, tex: `${calPerPound + extraCal}x` }, // Sum multiplied by x
+                { equation: `${extraCal}x + ${calPerPound}`, tex: `${extraCal}x + ${calPerPound}` }, // Reversed terms
+                { equation: `${calPerPound}x + ${extraCal}`, tex: `${calPerPound}x + ${extraCal}` } // Correct option
+            ];
+            
+            // Shuffle options (keeping correct answer in position D)
+            const shuffled = [distractors[0], distractors[1], distractors[2], distractors[3]];
+            for (let i = shuffled.length - 2; i > 0; i--) { // Don't shuffle the last (correct) option
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            
+            // The correct answer is always in position D (index 3)
+            shuffled[3] = distractors[3];
+            
+            return shuffled;
+        }
+
+        // Generate step-by-step solution
+        function generateSolutionSteps() {
+            const step1 = `The rabbit needs ${currentQuestion.calPerPound} calories per pound (${currentQuestion.calPerPound}x)`;
+            const step2 = `Plus an additional ${currentQuestion.extraCal} calories (+${currentQuestion.extraCal})`;
+            const step3 = `Therefore, the correct equation is: <span class="highlight">c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal}</span>`;
+            
+            document.getElementById('step1Text').innerHTML = step1;
+            document.getElementById('step2Text').innerHTML = step2;
+            document.getElementById('step3Text').innerHTML = step3;
+        }
+
+        // Export current question to PDF
+        function exportToPDF() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Rabbit Calorie Recommendation', 105, 20, {align: 'center'});
+            
+            // Add question
+            doc.setFontSize(12);
+            doc.text(`A veterinarian recommends that each day a certain rabbit should eat`, 20, 30);
+            doc.text(`${currentQuestion.calPerPound} calories per pound of the rabbit's weight, plus an`, 20, 40);
+            doc.text(`additional ${currentQuestion.extraCal} calories. Which equation represents this`, 20, 50);
+            doc.text(`situation, where c is the total calories and x is the weight in pounds?`, 20, 60);
+            
+            // Add options
+            doc.text('Options:', 20, 80);
+            doc.text(`A) c = ${currentQuestion.options[0].equation}`, 30, 90);
+            doc.text(`B) c = ${currentQuestion.options[1].equation}`, 30, 100);
+            doc.text(`C) c = ${currentQuestion.options[2].equation}`, 30, 110);
+            doc.text(`D) c = ${currentQuestion.options[3].equation}`, 30, 120);
+            
+            // Add solution
+            doc.setFontSize(14);
+            doc.text('Solution:', 20, 140);
+            doc.setFontSize(12);
+            doc.text(`1. Calories per pound: ${currentQuestion.calPerPound}x`, 30, 150);
+            doc.text(`2. Additional calories: +${currentQuestion.extraCal}`, 30, 160);
+            doc.text(`3. Correct equation: c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal}`, 30, 170);
+            doc.text(`Correct answer: D) c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal}`, 30, 180);
+            
+            // Save PDF
+            doc.save('Rabbit_Calorie_Problem.pdf');
+        }
+
+        // Event listeners for options
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                const solutionSteps = document.getElementById('solutionSteps');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ <strong>Correct!</strong> The equation is c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal}.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    const selectedOption = this.textContent;
+                    feedback.innerHTML = `❌ <strong>Incorrect.</strong> You selected ${selectedOption}, but the correct equation is c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal}.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+                solutionSteps.style.display = 'block';
+                
+                // Render MathJax again after showing steps
+                if (typeof MathJax !== 'undefined') {
+                    MathJax.typeset();
+                }
+            });
+        });
+
+        // Event listener for new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Event listener for export PDF button
+        document.getElementById('exportPDF').addEventListener('click', exportToPDF);
+
+        // Initialize the first question
+        window.addEventListener('DOMContentLoaded', function() {
+            generateSolutionSteps();
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

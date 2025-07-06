@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percentage Increase Problem Generator</title>
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Polyfill for older browser compatibility -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <style>
+        /* Basic body styling for font, max-width, centering, padding, line height, and background */
+        body {
+            font-family: 'Inter', Arial, sans-serif; /* Using Inter font as per instructions */
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+            border-radius: 8px; /* Applying rounded corners to the body for consistency */
+        }
+        /* Styling for the main heading */
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px; /* Rounded corners */
+        }
+        /* Container for the question text */
+        .question-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px; /* Rounded corners */
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08); /* Subtle shadow for depth */
+            border: 1px solid #e0e0e0;
+        }
+        /* Styling for the actual question text */
+        .question-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 15px;
+        }
+        /* Grid layout for the multiple-choice options */
+        .options {
+            display: grid;
+            grid-template-columns: 1fr; /* One column for options */
+            gap: 15px; /* Spacing between options */
+            margin: 25px 0;
+        }
+        /* Styling for individual option boxes */
+        .option {
+            padding: 15px;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for hover and selection */
+            background-color: #fefefe;
+            text-align: left; /* Align text to left for function display */
+            font-size: 1.1em;
+            color: #555;
+        }
+        /* Hover effect for options */
+        .option:hover {
+            background-color: #e9f5ff;
+            border-color: #a0d0ff;
+            transform: translateY(-3px); /* Slight lift effect */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        /* Styling for the selected option */
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #28a745;
+            box-shadow: 0 2px 8px rgba(40,167,69,0.2);
+            color: #155724;
+            transform: translateY(0); /* Reset lift if selected */
+        }
+        /* Flexbox for buttons to center and space them */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        /* General button styling */
+        button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            flex: 0 1 auto; /* Allow buttons to size content, but not grow excessively */
+            min-width: 180px; /* Ensure a minimum width for better appearance */
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Shadow for buttons */
+        }
+        /* Specific styling for the 'Generate New Question' button */
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Specific styling for the 'Export as PDF' button */
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Styling for feedback messages (correct/incorrect) */
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px; /* Rounded corners */
+            display: none; /* Hidden by default */
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 6px solid #28a745; /* Green left border for correct */
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid #dc3545; /* Red left border for incorrect */
+        }
+    </style>
+</head>
+<body>
+    <h1>Percentage Increase Problem</h1>
+    
+    <div class="question-container">
+        <p class="question-text" id="questionText">
+            The result of increasing the quantity x by <span id="percentageVal">400%</span> is <span id="resultVal">60</span>. What is the value of x?
+        </p>
+    </div>
+    
+    <div class="options" id="options">
+        <!-- Options will be dynamically populated and updated by JavaScript -->
+        <div class="option" data-value="A" id="optionA"></div>
+        <div class="option" data-value="B" id="optionB"></div>
+        <div class="option" data-value="C" id="optionC"></div>
+        <div class="option" data-value="D" id="optionD"></div>
+    </div>
+    
+    <!-- Feedback message (correct/incorrect) -->
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Object to store current question data
+        let currentQuestion = {};
+
+        /**
+         * Generates a random integer within a specified range.
+         * @param {number} min - The minimum value (inclusive).
+         * @param {number} max - The maximum value (inclusive).
+         * @returns {number} A random integer.
+         */
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates a new percentage increase problem.
+         * It creates random values for the percentage increase and the final result,
+         * then calculates the original value and generates multiple-choice options.
+         */
+        function generateQuestion() {
+            // Clear previous selection and hide feedback sections
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+
+            // Generate random percentage increase (e.g., 100% to 500% in steps of 50)
+            const percentageIncrease = getRandomInt(2, 10) * 50; // 100, 150, ..., 500
+            
+            // Generate a random original value 'x' that results in a 'clean' integer result
+            // x * (1 + percentageIncrease/100) = result
+            // x * ( (100 + percentageIncrease) / 100 ) = result
+            // Let's choose a result that is easily divisible by (100 + percentageIncrease)
+            const factor = (100 + percentageIncrease) / 100;
+            let originalX;
+            let result;
+
+            // Ensure originalX is an integer and result is a reasonable number
+            do {
+                originalX = getRandomInt(5, 20); // Base for original X
+                result = originalX * factor;
+            } while (result % 1 !== 0 || result < 50 || result > 500); // Ensure result is integer and within a reasonable range
+
+            // Update the question text with new values
+            document.getElementById('percentageVal').textContent = `${percentageIncrease}%`;
+            document.getElementById('resultVal').textContent = result;
+
+            // Store the current question's properties
+            currentQuestion = {
+                percentageIncrease: percentageIncrease,
+                result: result,
+                correctAnswer: originalX
+            };
+
+            // Generate and display the multiple-choice options
+            generateOptions();
+        }
+
+        /**
+         * Generates the multiple-choice options for the current question.
+         * It includes the correct answer and three random distractors.
+         */
+        function generateOptions() {
+            const options = {};
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            
+            // Set the first option as the correct answer initially
+            options[optionLetters[0]] = `${currentQuestion.correctAnswer}`;
+            options.correctOption = optionLetters[0];
+
+            // Generate three unique distractors
+            const distractors = [];
+            const usedValues = new Set([currentQuestion.correctAnswer]); // Keep track of values already used
+
+            while (distractors.length < 3) {
+                let distractorValue;
+                const type = getRandomInt(1, 3); // Different types of distractors
+
+                if (type === 1) { // Result itself
+                    distractorValue = currentQuestion.result;
+                } else if (type === 2) { // OriginalX + small random
+                    distractorValue = currentQuestion.correctAnswer + getRandomInt(-5, 5);
+                } else { // Result / (percentage / 100)
+                    distractorValue = Math.round(currentQuestion.result / (currentQuestion.percentageIncrease / 100));
+                }
+
+                // Ensure distractor is unique and not the correct answer, and not negative
+                if (!usedValues.has(distractorValue) && distractorValue > 0) {
+                    distractors.push(`${distractorValue}`);
+                    usedValues.add(distractorValue);
+                }
+            }
+
+            // Assign the generated distractors to the remaining options
+            for (let i = 1; i < optionLetters.length; i++) {
+                options[optionLetters[i]] = distractors[i - 1];
+            }
+
+            // Shuffle the options to randomize the position of the correct answer
+            const shuffledOptions = shuffleOptions(options, optionLetters);
+
+            // Update the HTML elements with the shuffled options
+            document.getElementById('optionA').textContent = `A) ${shuffledOptions.A}`;
+            document.getElementById('optionB').textContent = `B) ${shuffledOptions.B}`;
+            document.getElementById('optionC').textContent = `C) ${shuffledOptions.C}`;
+            document.getElementById('optionD').textContent = `D) ${shuffledOptions.D}`;
+
+            // Store the letter of the correct option after shuffling
+            currentQuestion.correctAnswerLetter = shuffledOptions.correctOption;
+        }
+
+        /**
+         * Shuffles the order of options while keeping track of which option is correct.
+         * @param {Object} options - An object containing string representations for options A, B, C, D, and the correctOption letter.
+         * @param {string[]} optionLetters - An array of option letters (e.g., ['A', 'B', 'C', 'D']).
+         * @returns {Object} An object with shuffled option strings and the new correctOption letter.
+         */
+        function shuffleOptions(options, optionLetters) {
+            const values = optionLetters.map(letter => options[letter]); // Get the strings of the options
+            const correctValue = options[options.correctOption]; // Get the string of the correct answer
+            
+            // Fisher-Yates shuffle algorithm
+            for (let i = values.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [values[i], values[j]] = [values[j], values[i]]; // Swap elements
+            }
+            
+            // Find the new index of the correct value after shuffling
+            const newCorrectIndex = values.indexOf(correctValue);
+            const newCorrectOption = optionLetters[newCorrectIndex]; // Get the new letter for the correct option
+            
+            // Create a new object with the shuffled options and the updated correct option letter
+            const shuffledOptions = {
+                A: values[0],
+                B: values[1],
+                C: values[2],
+                D: values[3],
+                correctOption: newCorrectOption
+            };
+            
+            return shuffledOptions;
+        }
+
+        // Event listener for when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click listeners to each option
+            document.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove 'selected' class from all options
+                    document.querySelectorAll('.option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    // Add 'selected' class to the clicked option
+                    this.classList.add('selected');
+                    
+                    const selectedValueLetter = this.getAttribute('data-value'); // Get the data-value (A, B, C, D)
+                    const feedback = document.getElementById('feedback');
+                    
+                    // Check if the selected answer is correct
+                    if (selectedValueLetter === currentQuestion.correctAnswerLetter) {
+                        feedback.innerHTML = `✅ <strong>Correct!</strong> The value of x is ${currentQuestion.correctAnswer}.`;
+                        feedback.className = 'feedback correct'; // Apply correct feedback styling
+                    } else {
+                        const selectedOptionText = document.getElementById(`option${selectedValueLetter}`).textContent;
+                        // Remove the option letter (e.g., "A) ") from the selected text for cleaner feedback
+                        const cleanSelectedText = selectedOptionText.substring(3); 
+                        feedback.innerHTML = `❌ <strong>Incorrect.</strong> You selected ${cleanSelectedText}, but the correct answer is ${currentQuestion.correctAnswer}.`;
+                        feedback.className = 'feedback incorrect'; // Apply incorrect feedback styling
+                    }
+                    feedback.style.display = 'block'; // Show feedback
+                });
+            });
+
+            // Event listener for the 'Generate New Question' button
+            document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+            // Event listener for the 'Export as PDF' button
+            document.getElementById('exportPDF').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add title to the PDF
+                doc.setFontSize(18);
+                doc.text('Percentage Increase Problem', 105, 20, {align: 'center'});
+                
+                // Add question text to the PDF
+                doc.setFontSize(12);
+                const questionTextContent = `The result of increasing the quantity x by ${currentQuestion.percentageIncrease}% is ${currentQuestion.result}. What is the value of x?`;
+                const questionTextLines = doc.splitTextToSize(questionTextContent, 170);
+                doc.text(questionTextLines, 20, 30);
+                
+                // Add options to the PDF
+                doc.setFontSize(12);
+                doc.text('Options:', 20, 60); // Adjust Y position
+                
+                // Get option texts directly from the elements
+                const optionA_text = document.getElementById('optionA').textContent;
+                const optionB_text = document.getElementById('optionB').textContent;
+                const optionC_text = document.getElementById('optionC').textContent;
+                const optionD_text = document.getElementById('optionD').textContent;
+
+                doc.text(`${optionA_text}`, 30, 70);
+                doc.text(`${optionB_text}`, 30, 80);
+                doc.text(`${optionC_text}`, 30, 90);
+                doc.text(`${optionD_text}`, 30, 100);
+                
+                // Save the generated PDF file
+                doc.save('Percentage_Increase_Problem.pdf');
+            });
+
+            // Generate the first question when the page loads
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>

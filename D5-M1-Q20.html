@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Trigonometry Question</title>
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Polyfill for older browser compatibility -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <style>
+        /* Basic body styling */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+            border-radius: 8px;
+        }
+        /* Main heading styling */
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        /* Question container styling */
+        .question-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+        }
+        /* Question text styling */
+        .question-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        /* Input field styling */
+        .input-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #answerInput {
+            padding: 10px 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            width: 150px;
+            text-align: center;
+            transition: border-color 0.3s ease;
+        }
+        #answerInput:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        /* Buttons container styling */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+        /* General button styling */
+        button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 0 1 auto;
+            min-width: 180px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        /* Specific button styling */
+        #checkAnswer {
+            background-color: #007bff;
+        }
+        #checkAnswer:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        #newQuestion {
+            background-color: #28a745;
+        }
+        #newQuestion:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        #exportPDF {
+            background-color: #6c757d;
+        }
+        #exportPDF:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        /* Feedback message styling */
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 6px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic Trigonometry Question</h1>
+    
+    <div class="question-container">
+        <p class="question-text" id="questionText">
+            What is the value of sin(π/4)?
+        </p>
+        <div class="input-area">
+            <input type="text" id="answerInput" placeholder="Your Answer (e.g., sqrt(2)/2 or 1)">
+            <button id="checkAnswer">Check Answer</button>
+        </div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <div class="buttons">
+        <button id="newQuestion">Generate New Question</button>
+        <button id="exportPDF">Export as PDF</button>
+    </div>
+
+    <script>
+        // Object to store current question data
+        let currentQuestion = {};
+
+        // Define common angles and their sine, cosine, and tangent values
+        // Values are stored as objects with 'display' (for HTML) and 'pdf' (for PDF export) properties
+        const PI = Math.PI;
+        const sqrt2 = Math.sqrt(2);
+        const sqrt3 = Math.sqrt(3);
+
+        // Helper to format fractions for display and PDF
+        function formatFraction(num, den) {
+            if (den === 1) return { display: `${num}`, pdf: `${num}` };
+            return { display: `${num}/${den}`, pdf: `${num}/${den}` };
+        }
+
+        // Helper to format square roots for display and PDF
+        function formatSqrt(num, den = 1) {
+            if (num === 0) return { display: '0', pdf: '0' };
+            if (num === 1 && den === 1) return { display: '1', pdf: '1' };
+            if (den === 1) return { display: `sqrt(${num})`, pdf: `sqrt(${num})` };
+            return { display: `sqrt(${num})/${den}`, pdf: `sqrt(${num})/${den}` };
+        }
+
+        const angleValues = [
+            // Angle, Display Format (for HTML), PDF Format, Sine, Cosine, Tangent
+            { angle: { num: 0, den: 1, display: '0', pdf: '0' },
+              sin: { display: '0', pdf: '0' },
+              cos: { display: '1', pdf: '1' },
+              tan: { display: '0', pdf: '0' }
+            },
+            { angle: { num: 1, den: 6, display: 'π/6', pdf: 'pi/6' }, // 30 degrees
+              sin: formatFraction(1, 2),
+              cos: formatSqrt(3, 2),
+              tan: formatSqrt(3, 3)
+            },
+            { angle: { num: 1, den: 4, display: 'π/4', pdf: 'pi/4' }, // 45 degrees
+              sin: formatSqrt(2, 2),
+              cos: formatSqrt(2, 2),
+              tan: formatFraction(1, 1)
+            },
+            { angle: { num: 1, den: 3, display: 'π/3', pdf: 'pi/3' }, // 60 degrees
+              sin: formatSqrt(3, 2),
+              cos: formatFraction(1, 2),
+              tan: formatSqrt(3)
+            },
+            { angle: { num: 1, den: 2, display: 'π/2', pdf: 'pi/2' }, // 90 degrees
+              sin: { display: '1', pdf: '1' },
+              cos: { display: '0', pdf: '0' },
+              tan: { display: 'undefined', pdf: 'undefined' }
+            },
+            { angle: { num: 2, den: 3, display: '2π/3', pdf: '2pi/3' }, // 120 degrees
+              sin: formatSqrt(3, 2),
+              cos: formatFraction(-1, 2),
+              tan: { display: `-sqrt(3)`, pdf: `-sqrt(3)` }
+            },
+            { angle: { num: 3, den: 4, display: '3π/4', pdf: '3pi/4' }, // 135 degrees
+              sin: formatSqrt(2, 2),
+              cos: { display: `-sqrt(2)/2`, pdf: `-sqrt(2)/2` },
+              tan: { display: `-1`, pdf: `-1` }
+            },
+            { angle: { num: 5, den: 6, display: '5π/6', pdf: '5pi/6' }, // 150 degrees
+              sin: formatFraction(1, 2),
+              cos: { display: `-sqrt(3)/2`, pdf: `-sqrt(3)/2` },
+              tan: { display: `-sqrt(3)/3`, pdf: `-sqrt(3)/3` }
+            },
+            { angle: { num: 1, den: 1, display: 'π', pdf: 'pi' }, // 180 degrees
+              sin: { display: '0', pdf: '0' },
+              cos: { display: '-1', pdf: '-1' },
+              tan: { display: '0', pdf: '0' }
+            },
+            { angle: { num: 7, den: 6, display: '7π/6', pdf: '7pi/6' }, // 210 degrees
+              sin: formatFraction(-1, 2),
+              cos: formatSqrt(3, 2), // cos is negative in Q3, but reference angle is pi/6, so sqrt(3)/2
+              tan: formatSqrt(3, 3)
+            },
+            { angle: { num: 5, den: 4, display: '5π/4', pdf: '5pi/4' }, // 225 degrees
+              sin: { display: `-sqrt(2)/2`, pdf: `-sqrt(2)/2` },
+              cos: { display: `-sqrt(2)/2`, pdf: `-sqrt(2)/2` },
+              tan: formatFraction(1, 1)
+            },
+            { angle: { num: 4, den: 3, display: '4π/3', pdf: '4pi/3' }, // 240 degrees
+              sin: { display: `-sqrt(3)/2`, pdf: `-sqrt(3)/2` },
+              cos: formatFraction(-1, 2),
+              tan: formatSqrt(3)
+            },
+            { angle: { num: 3, den: 2, display: '3π/2', pdf: '3pi/2' }, // 270 degrees
+              sin: { display: '-1', pdf: '-1' },
+              cos: { display: '0', pdf: '0' },
+              tan: { display: 'undefined', pdf: 'undefined' }
+            },
+            { angle: { num: 5, den: 3, display: '5π/3', pdf: '5pi/3' }, // 300 degrees
+              sin: { display: `-sqrt(3)/2`, pdf: `-sqrt(3)/2` },
+              cos: formatFraction(1, 2),
+              tan: { display: `-sqrt(3)`, pdf: `-sqrt(3)` }
+            },
+            { angle: { num: 7, den: 4, display: '7π/4', pdf: '7pi/4' }, // 315 degrees
+              sin: { display: `-sqrt(2)/2`, pdf: `-sqrt(2)/2` },
+              cos: formatSqrt(2, 2),
+              tan: { display: `-1`, pdf: `-1` }
+            },
+            { angle: { num: 11, den: 6, display: '11π/6', pdf: '11pi/6' }, // 330 degrees
+              sin: formatFraction(-1, 2),
+              cos: formatSqrt(3, 2),
+              tan: { display: `-sqrt(3)/3`, pdf: `-sqrt(3)/3` }
+            }
+        ];
+
+        // Functions to generate random integers (kept for general utility)
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates a new trigonometry question.
+         */
+        function generateQuestion() {
+            // Clear previous input and hide feedback
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('answerInput').style.borderColor = '#ccc'; // Reset border color
+
+            // Randomly select a trigonometric function
+            const trigFunctions = ['sin', 'cos', 'tan'];
+            const selectedFunction = trigFunctions[getRandomInt(0, trigFunctions.length - 1)];
+
+            // Randomly select an angle from the predefined list
+            const selectedAngleData = angleValues[getRandomInt(0, angleValues.length - 1)];
+
+            // Get the correct answer based on the selected function and angle
+            let correctAnswerData = selectedAngleData[selectedFunction];
+
+            // Handle undefined tangent specifically
+            if (selectedFunction === 'tan' && selectedAngleData.tan.display === 'undefined') {
+                // If tan is undefined, we need to ensure the answer input is text, not number
+                document.getElementById('answerInput').type = 'text';
+            } else {
+                document.getElementById('answerInput').type = 'text'; // Keep as text for sqrt/fraction input
+            }
+
+            // Construct the question text
+            const questionText = `What is the value of ${selectedFunction}(${selectedAngleData.angle.display})?`;
+
+            // Store the current question's properties
+            currentQuestion = {
+                function: selectedFunction,
+                angle: selectedAngleData.angle.display,
+                anglePdf: selectedAngleData.angle.pdf,
+                correctAnswerDisplay: correctAnswerData.display,
+                correctAnswerPdf: correctAnswerData.pdf,
+                correctAnswerValue: null // For numerical comparison if applicable, otherwise null
+            };
+
+            // For numerical answers, we can store the actual float value for comparison
+            if (selectedFunction === 'sin' || selectedFunction === 'cos') {
+                if (selectedAngleData.angle.num === 0) { // sin(0), cos(0)
+                    currentQuestion.correctAnswerValue = (selectedFunction === 'sin') ? 0 : 1;
+                } else if (selectedAngleData.angle.den === 2 && selectedAngleData.angle.num === 1) { // pi/2
+                    currentQuestion.correctAnswerValue = (selectedFunction === 'sin') ? 1 : 0;
+                } else if (selectedAngleData.angle.den === 2 && selectedAngleData.angle.num === 3) { // 3pi/2
+                    currentQuestion.correctAnswerValue = (selectedFunction === 'sin') ? -1 : 0;
+                } else if (selectedAngleData.angle.den === 1 && selectedAngleData.angle.num === 1) { // pi
+                    currentQuestion.correctAnswerValue = (selectedFunction === 'sin') ? 0 : -1;
+                } else {
+                    // Calculate numerical value for comparison (handle sqrt and fractions)
+                    try {
+                        let val = eval(correctAnswerData.pdf.replace(/sqrt/g, 'Math.sqrt').replace(/\//g, '/'));
+                        currentQuestion.correctAnswerValue = parseFloat(val.toFixed(5)); // Round for comparison
+                    } catch (e) {
+                        currentQuestion.correctAnswerValue = null; // Cannot parse to number
+                    }
+                }
+            } else if (selectedFunction === 'tan' && selectedAngleData.tan.display !== 'undefined') {
+                 try {
+                    let val = eval(correctAnswerData.pdf.replace(/sqrt/g, 'Math.sqrt').replace(/\//g, '/'));
+                    currentQuestion.correctAnswerValue = parseFloat(val.toFixed(5)); // Round for comparison
+                } catch (e) {
+                    currentQuestion.correctAnswerValue = null; // Cannot parse to number
+                }
+            }
+
+
+            // Update the HTML element with the new question
+            document.getElementById('questionText').textContent = questionText;
+        }
+
+        /**
+         * Checks the user's answer and provides feedback.
+         */
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim();
+            const feedback = document.getElementById('feedback');
+            const answerInput = document.getElementById('answerInput');
+
+            // Normalize user input for comparison (remove spaces, lowercase sqrt, etc.)
+            const normalizedUserAnswer = userAnswer.toLowerCase().replace(/\s/g, '');
+            const normalizedCorrectAnswer = currentQuestion.correctAnswerDisplay.toLowerCase().replace(/\s/g, '');
+            const normalizedCorrectAnswerPdf = currentQuestion.correctAnswerPdf.toLowerCase().replace(/\s/g, '');
+
+            let isCorrect = false;
+
+            if (currentQuestion.correctAnswerDisplay === 'undefined') {
+                isCorrect = (normalizedUserAnswer === 'undefined' || normalizedUserAnswer === 'und' || normalizedUserAnswer === 'dne');
+            } else if (currentQuestion.correctAnswerValue !== null) {
+                // Try to parse user input as a float for numerical comparison
+                let userFloatAnswer;
+                try {
+                    userFloatAnswer = parseFloat(eval(normalizedUserAnswer.replace(/sqrt/g, 'Math.sqrt').replace(/\//g, '/')).toFixed(5));
+                } catch (e) {
+                    userFloatAnswer = NaN;
+                }
+                isCorrect = (userFloatAnswer === currentQuestion.correctAnswerValue);
+            } else {
+                // Fallback to string comparison for non-numerical answers (e.g., sqrt(3)/2)
+                isCorrect = (normalizedUserAnswer === normalizedCorrectAnswer || normalizedUserAnswer === normalizedCorrectAnswerPdf);
+            }
+
+            if (isCorrect) {
+                feedback.innerHTML = `✅ <strong>Correct!</strong> The value is ${currentQuestion.correctAnswerDisplay}.`;
+                feedback.className = 'feedback correct';
+                answerInput.style.borderColor = '#28a745'; // Green border for correct
+            } else {
+                feedback.innerHTML = `❌ <strong>Incorrect.</strong> Your answer was "${userAnswer}", but the correct value is ${currentQuestion.correctAnswerDisplay}.`;
+                feedback.className = 'feedback incorrect';
+                answerInput.style.borderColor = '#dc3545'; // Red border for incorrect
+            }
+            feedback.style.display = 'block';
+        }
+
+        // Event listener for when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click listener to the 'Check Answer' button
+            document.getElementById('checkAnswer').addEventListener('click', checkAnswer);
+
+            // Allow checking answer on 'Enter' key press in the input field
+            document.getElementById('answerInput').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+
+            // Add click listener to the 'Generate New Question' button
+            document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+            // Event listener for the 'Export as PDF' button
+            document.getElementById('exportPDF').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add title to the PDF
+                doc.setFontSize(18);
+                doc.text('Trigonometry Problem', 105, 20, {align: 'center'});
+                
+                // Add question text to the PDF
+                doc.setFontSize(12);
+                const questionTextContent = `What is the value of ${currentQuestion.function}(${currentQuestion.anglePdf})?`;
+                const questionTextLines = doc.splitTextToSize(questionTextContent, 170);
+                doc.text(questionTextLines, 20, 30);
+                
+                // Add the correct answer to the PDF
+                doc.setFontSize(12);
+                doc.text(`Correct Answer: ${currentQuestion.correctAnswerPdf}`, 20, 50);
+                
+                // Save the generated PDF file
+                doc.save('Trigonometry_Problem.pdf');
+            });
+
+            // Generate the first question when the page loads
+            generateQuestion();
+        });
+    </script>
+</body>
+</html>

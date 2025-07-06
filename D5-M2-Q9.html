@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diving Graph Interpretation</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .graph-container {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        #diveGraph {
+            max-width: 100%;
+            height: 300px;
+            margin: 0 auto;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: white;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .option.selected {
+            background-color: #e6f7e6;
+            border-color: #28a745;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            background-color: white;
+            border: 1px solid #ddd;
+        }
+        .correct {
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            border-left: 5px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Diving Graph Interpretation</h1>
+    
+    <div class="question-container">
+        <p>A competitive diver dives from a platform into the water. The graph shows the height above the water \( y \), in meters, of the diver \( x \) seconds after diving.</p>
+        <div class="graph-container">
+            <canvas id="diveGraph"></canvas>
+        </div>
+        <p>What is the best interpretation of the \( x \)-intercept of the graph?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) The diver reaches a maximum height above the water at <span id="timeA">0</span> seconds.</div>
+        <div class="option" data-value="B">B) The diver hits the water at <span id="timeB">2</span> seconds.</div>
+        <div class="option" data-value="C">C) The diver reaches a maximum height above the water at <span id="timeC">1</span> seconds.</div>
+        <div class="option" data-value="D">D) The diver hits the water at <span id="timeD">1</span> seconds.</div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <button id="newQuestion">Generate New Scenario</button>
+
+    <script>
+        // Chart instance
+        let diveChart;
+        let currentQuestion = {
+            maxHeightTime: 1,    // Integer seconds
+            waterHitTime: 2,     // Integer seconds
+            maxHeight: 10,       // Meters
+            correctAnswer: 'B'
+        };
+
+        // Generate parabolic dive curve data with integer intercepts
+        function generateDiveData(maxHeightTime, waterHitTime, maxHeight) {
+            const data = [];
+            const steps = 20;
+            for (let i = 0; i <= steps; i++) {
+                const x = (waterHitTime * i) / steps;
+                // Quadratic equation to create a parabola
+                const y = maxHeight * (1 - Math.pow((x - maxHeightTime) / (waterHitTime), 2));
+                data.push({x, y});
+            }
+            return data;
+        }
+
+        // Create or update the dive graph in black and white
+        function updateDiveGraph() {
+            const ctx = document.getElementById('diveGraph').getContext('2d');
+            const diveData = generateDiveData(currentQuestion.maxHeightTime, currentQuestion.waterHitTime, currentQuestion.maxHeight);
+            
+            if (diveChart) {
+                diveChart.destroy();
+            }
+            
+            diveChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Diver Height',
+                        data: diveData,
+                        showLine: true,
+                        borderColor: 'black',
+                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }, {
+                        label: 'x-intercept',
+                        data: [{x: currentQuestion.waterHitTime, y: 0}],
+                        backgroundColor: 'black',
+                        pointRadius: 6,
+                        pointStyle: 'triangle'
+                    }, {
+                        label: 'Maximum Height',
+                        data: [{x: currentQuestion.maxHeightTime, y: currentQuestion.maxHeight}],
+                        backgroundColor: 'black',
+                        pointRadius: 6,
+                        pointStyle: 'rect'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Time (seconds)',
+                                color: 'black'
+                            },
+                            min: 0,
+                            max: currentQuestion.waterHitTime * 1.1,
+                            ticks: {
+                                stepSize: 1,
+                                color: 'black'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Height (meters)',
+                                color: 'black'
+                            },
+                            min: 0,
+                            max: currentQuestion.maxHeight * 1.2,
+                            ticks: {
+                                stepSize: 2,
+                                color: 'black'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 1) {
+                                        return `Enters water at ${currentQuestion.waterHitTime}s`;
+                                    }
+                                    if (context.datasetIndex === 2) {
+                                        return `Max height at ${currentQuestion.maxHeightTime}s`;
+                                    }
+                                    return `${context.parsed.y.toFixed(1)}m at ${context.parsed.x.toFixed(1)}s`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate new random scenario with integer values
+        function generateQuestion() {
+            // Clear previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Generate random dive parameters with integer values
+            currentQuestion.maxHeightTime = Math.floor(Math.random() * 2) + 1; // 1 or 2 seconds
+            currentQuestion.waterHitTime = currentQuestion.maxHeightTime + 1;   // 2 or 3 seconds
+            currentQuestion.maxHeight = Math.floor(Math.random() * 3) * 2 + 8; // 8, 10, or 12 meters
+            
+            // Determine correct answer (always B for x-intercept interpretation)
+            currentQuestion.correctAnswer = 'B';
+            
+            // Update options with new times
+            document.getElementById('timeA').textContent = currentQuestion.maxHeightTime;
+            document.getElementById('timeB').textContent = currentQuestion.waterHitTime;
+            document.getElementById('timeC').textContent = currentQuestion.maxHeightTime;
+            document.getElementById('timeD').textContent = currentQuestion.maxHeightTime;
+            
+            // Update the graph
+            updateDiveGraph();
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Check answer and provide feedback
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ Correct! The x-intercept at ${currentQuestion.waterHitTime} seconds represents when the diver hits the water (height = 0).`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    feedback.innerHTML = `❌ Incorrect. The x-intercept at ${currentQuestion.waterHitTime} seconds represents when the diver hits the water.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+            });
+        });
+
+        // Generate new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Initialize the first question
+        window.addEventListener('DOMContentLoaded', function() {
+            generateQuestion();
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

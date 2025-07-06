@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scatterplot Analysis</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .graph-container {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        #scatterPlot {
+            max-width: 100%;
+            height: 300px;
+            margin: 0 auto;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: white;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .option.selected {
+            background-color: #e6f7e6;
+            border-color: #28a745;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            background-color: white;
+            border: 1px solid #ddd;
+        }
+        .correct {
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            border-left: 5px solid #dc3545;
+        }
+        .point-count {
+            font-weight: bold;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Scatterplot Analysis</h1>
+    
+    <div class="question-container">
+        <p>The scatterplot shows the relationship between two variables \( x \) and \( y \). A line of best fit for the data is also shown.</p>
+        <div class="graph-container">
+            <canvas id="scatterPlot"></canvas>
+        </div>
+        <p>For how many of the data points is the actual \( y \)-value greater than the \( y \)-value predicted by the line of best fit?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) <span id="optionA">3</span></div>
+        <div class="option" data-value="B">B) <span id="optionB">4</span></div>
+        <div class="option" data-value="C">C) <span id="optionC">6</span></div>
+        <div class="option" data-value="D">D) <span id="optionD">7</span></div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <button id="newQuestion">Generate New Scatterplot</button>
+
+    <script>
+        // Chart instance
+        let scatterChart;
+        let currentQuestion = {
+            pointsAboveLine: 4,
+            totalPoints: 10,
+            correctAnswer: 'B'
+        };
+
+        // Generate random scatterplot data
+        function generateScatterData() {
+            const data = [];
+            const slope = (Math.random() * 2) - 1; // Random slope between -1 and 1
+            const intercept = Math.random() * 10 + 5; // Random intercept between 5 and 15
+            
+            // Determine how many points will be above the line (between 3-7)
+            currentQuestion.pointsAboveLine = Math.floor(Math.random() * 5) + 3;
+            currentQuestion.totalPoints = 10;
+            
+            // Generate points
+            for (let i = 0; i < currentQuestion.totalPoints; i++) {
+                const x = Math.random() * 10;
+                const predictedY = slope * x + intercept;
+                // Randomly decide if this point will be above or below the line
+                const isAbove = (i < currentQuestion.pointsAboveLine);
+                const y = predictedY + (isAbove ? Math.random() * 3 + 1 : -Math.random() * 3 - 1);
+                data.push({x, y});
+            }
+            
+            // Shuffle the points
+            for (let i = data.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [data[i], data[j]] = [data[j], data[i]];
+            }
+            
+            return {
+                dataPoints: data,
+                lineSlope: slope,
+                lineIntercept: intercept
+            };
+        }
+
+        // Create or update the scatterplot
+        function updateScatterPlot() {
+            const ctx = document.getElementById('scatterPlot').getContext('2d');
+            const scatterData = generateScatterData();
+            
+            if (scatterChart) {
+                scatterChart.destroy();
+            }
+            
+            // Prepare datasets
+            const pointBackgroundColors = [];
+            const pointBorderColors = [];
+            
+            for (let i = 0; i < scatterData.dataPoints.length; i++) {
+                const point = scatterData.dataPoints[i];
+                const predictedY = scatterData.lineSlope * point.x + scatterData.lineIntercept;
+                if (point.y > predictedY) {
+                    pointBackgroundColors.push('rgba(255, 99, 132, 0.7)');
+                    pointBorderColors.push('rgba(255, 99, 132, 1)');
+                } else {
+                    pointBackgroundColors.push('rgba(54, 162, 235, 0.7)');
+                    pointBorderColors.push('rgba(54, 162, 235, 1)');
+                }
+            }
+            
+            scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Line of Best Fit',
+                        data: [
+                            {x: 0, y: scatterData.lineIntercept},
+                            {x: 10, y: scatterData.lineSlope * 10 + scatterData.lineIntercept}
+                        ],
+                        showLine: true,
+                        borderColor: 'black',
+                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }, {
+                        label: 'Data Points',
+                        data: scatterData.dataPoints,
+                        backgroundColor: pointBackgroundColors,
+                        borderColor: pointBorderColors,
+                        borderWidth: 1,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'x',
+                                color: 'black'
+                            },
+                            min: 0,
+                            max: 10,
+                            ticks: {
+                                stepSize: 2,
+                                color: 'black'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'y',
+                                color: 'black'
+                            },
+                            min: 0,
+                            max: 20,
+                            ticks: {
+                                stepSize: 5,
+                                color: 'black'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `(${context.parsed.x.toFixed(1)}, ${context.parsed.y.toFixed(1)})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update options (make sure correct answer is among them)
+            const options = [3, 4, 6, 7];
+            if (!options.includes(currentQuestion.pointsAboveLine)) {
+                options[Math.floor(Math.random() * 4)] = currentQuestion.pointsAboveLine;
+            }
+            
+            // Shuffle options
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            
+            // Update display
+            document.getElementById('optionA').textContent = options[0];
+            document.getElementById('optionB').textContent = options[1];
+            document.getElementById('optionC').textContent = options[2];
+            document.getElementById('optionD').textContent = options[3];
+            
+            // Set correct answer
+            currentQuestion.correctAnswer = String.fromCharCode(65 + options.indexOf(currentQuestion.pointsAboveLine));
+        }
+
+        // Generate new question
+        function generateQuestion() {
+            // Clear previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Update the scatterplot
+            updateScatterPlot();
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Check answer and provide feedback
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ Correct! There are <span class="point-count">${currentQuestion.pointsAboveLine}</span> data points above the line of best fit.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    feedback.innerHTML = `❌ Incorrect. There are actually <span class="point-count">${currentQuestion.pointsAboveLine}</span> data points above the line.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+            });
+        });
+
+        // Generate new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Initialize the first question
+        window.addEventListener('DOMContentLoaded', function() {
+            generateQuestion();
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

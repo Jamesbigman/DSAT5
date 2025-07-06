@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAT Math Practice - Sea Turtle Eggs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .question-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .sat-logo {
+            background: #1a73e8;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .question-number {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .data-table {
+            margin: 25px auto;
+            border-collapse: collapse;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 20px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background: #4a5568;
+            color: white;
+            font-weight: bold;
+        }
+
+        .data-table td {
+            font-size: 16px;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: #e2e8f0;
+            transition: background 0.3s ease;
+        }
+
+        .answer-choices {
+            margin: 30px 0;
+        }
+
+        .choice {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .choice:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+            transform: translateX(5px);
+        }
+
+        .choice.selected {
+            border-color: #667eea;
+            background: #ebf4ff;
+        }
+
+        .choice.correct {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .choice.incorrect {
+            border-color: #f56565;
+            background: #fef5f5;
+        }
+
+        .choice-letter {
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 15px;
+            color: #4a5568;
+            min-width: 25px;
+        }
+
+        .choice-text {
+            font-size: 16px;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            color: #2f855a;
+        }
+
+        .feedback.incorrect {
+            background: #fef5f5;
+            border: 2px solid #f56565;
+            color: #c53030;
+        }
+
+        .calculation-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .reset-btn {
+            background: #718096;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="header">
+            <div class="sat-logo">SAT Math Practice</div>
+        </div>
+
+        <div class="question-text">
+            Five <em>Eretmochelys imbricata</em>, a type of sea turtle, each have a nest. The table shows an original data set of the number of eggs that each turtle laid in its nest.
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nest</th>
+                    <th>Number of eggs</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A</td>
+                    <td>149</td>
+                </tr>
+                <tr>
+                    <td>B</td>
+                    <td>144</td>
+                </tr>
+                <tr>
+                    <td>C</td>
+                    <td>148</td>
+                </tr>
+                <tr>
+                    <td>D</td>
+                    <td>136</td>
+                </tr>
+                <tr>
+                    <td>E</td>
+                    <td>139</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="question-text">
+            A sixth nest with 121 eggs is added to create a new data set. Which of the following correctly compares the means of the two data sets?
+        </div>
+
+        <div class="answer-choices">
+            <div class="choice" data-choice="A">
+                <span class="choice-letter">A)</span>
+                <span class="choice-text">The mean of the original data set is greater than the mean of the new data set.</span>
+            </div>
+            <div class="choice" data-choice="B">
+                <span class="choice-letter">B)</span>
+                <span class="choice-text">The mean of the original data set is less than the mean of the new data set.</span>
+            </div>
+            <div class="choice" data-choice="C">
+                <span class="choice-letter">C)</span>
+                <span class="choice-text">The means of both data sets are equal.</span>
+            </div>
+            <div class="choice" data-choice="D">
+                <span class="choice-letter">D)</span>
+                <span class="choice-text">There is not enough information to compare the means.</span>
+            </div>
+        </div>
+
+        <button class="submit-btn" onclick="checkAnswer()">Submit Answer</button>
+        <button class="reset-btn" onclick="generateNewNumbers()" style="background: #38a169; margin: 10px auto 0; display: block;">Generate New Numbers</button>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        let selectedChoice = null;
+        let answered = false;
+        let currentData = {
+            original: [149, 144, 148, 136, 139],
+            newValue: 121
+        };
+
+        // Initialize the display
+        updateDisplay();
+
+        function updateDisplay() {
+            // Update table
+            const tableBody = document.querySelector('.data-table tbody');
+            tableBody.innerHTML = '';
+            
+            const nests = ['A', 'B', 'C', 'D', 'E'];
+            currentData.original.forEach((value, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${nests[index]}</td>
+                    <td>${value}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Update question text
+            const questionText = document.querySelectorAll('.question-text')[1];
+            questionText.textContent = `A sixth nest with ${currentData.newValue} eggs is added to create a new data set. Which of the following correctly compares the means of the two data sets?`;
+        }
+
+        // Add click listeners to choices
+        document.querySelectorAll('.choice').forEach(choice => {
+            choice.addEventListener('click', function() {
+                if (answered) return;
+                
+                // Remove previous selection
+                document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+                
+                // Select current choice
+                this.classList.add('selected');
+                selectedChoice = this.dataset.choice;
+            });
+        });
+
+        function generateNewNumbers() {
+            // Generate new random data
+            currentData.original = [];
+            for (let i = 0; i < 5; i++) {
+                currentData.original.push(Math.floor(Math.random() * 50) + 120); // 120-169 range
+            }
+            
+            // Generate new sixth value
+            currentData.newValue = Math.floor(Math.random() * 60) + 100; // 100-159 range
+            
+            // Reset the question state
+            resetQuestion();
+            
+            // Update display
+            updateDisplay();
+        }
+
+        function checkAnswer() {
+            if (!selectedChoice || answered) return;
+            
+            answered = true;
+            const feedback = document.getElementById('feedback');
+            
+            // Calculate the means
+            const originalMean = currentData.original.reduce((sum, val) => sum + val, 0) / currentData.original.length;
+            const newData = [...currentData.original, currentData.newValue];
+            const newMean = newData.reduce((sum, val) => sum + val, 0) / newData.length;
+            
+            // Determine correct answer
+            let correctAnswer;
+            if (originalMean > newMean) {
+                correctAnswer = 'A';
+            } else if (originalMean < newMean) {
+                correctAnswer = 'B';
+            } else {
+                correctAnswer = 'C';
+            }
+            
+            // Show correct/incorrect styling
+            document.querySelectorAll('.choice').forEach(choice => {
+                if (choice.dataset.choice === correctAnswer) {
+                    choice.classList.add('correct');
+                } else if (choice.dataset.choice === selectedChoice && selectedChoice !== correctAnswer) {
+                    choice.classList.add('incorrect');
+                }
+            });
+            
+            if (selectedChoice === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong><br><br>
+                    Let's verify the calculation:<br>
+                    <div class="calculation-box">
+                    Original mean = (${currentData.original.join(' + ')}) ÷ 5 = ${currentData.original.reduce((a,b) => a+b, 0)} ÷ 5 = ${originalMean.toFixed(2)}<br>
+                    New mean = (${currentData.original.join(' + ')} + ${currentData.newValue}) ÷ 6 = ${newData.reduce((a,b) => a+b, 0)} ÷ 6 = ${newMean.toFixed(2)}
+                    </div>
+                    ${originalMean > newMean ? 
+                        `Since ${originalMean.toFixed(2)} > ${newMean.toFixed(2)}, the mean of the original data set is greater than the mean of the new data set.` :
+                        originalMean < newMean ?
+                        `Since ${originalMean.toFixed(2)} < ${newMean.toFixed(2)}, the mean of the original data set is less than the mean of the new data set.` :
+                        `Since ${originalMean.toFixed(2)} = ${newMean.toFixed(2)}, the means of both data sets are equal.`
+                    }
+                `;
+            } else {
+                const correctChoice = correctAnswer === 'A' ? 'A' : correctAnswer === 'B' ? 'B' : 'C';
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> The correct answer is ${correctChoice}.<br><br>
+                    Here's the calculation:<br>
+                    <div class="calculation-box">
+                    Original mean = (${currentData.original.join(' + ')}) ÷ 5 = ${originalMean.toFixed(2)}<br>
+                    New mean = (${currentData.original.join(' + ')} + ${currentData.newValue}) ÷ 6 = ${newMean.toFixed(2)}
+                    </div>
+                    ${originalMean > newMean ? 
+                        `Adding ${currentData.newValue} (which is below the original mean of ${originalMean.toFixed(2)}) pulls the overall mean down.` :
+                        originalMean < newMean ?
+                        `Adding ${currentData.newValue} (which is above the original mean of ${originalMean.toFixed(2)}) pulls the overall mean up.` :
+                        `Adding ${currentData.newValue} results in the same mean by coincidence.`
+                    }
+                `;
+            }
+            
+            feedback.style.display = 'block';
+            document.querySelector('.submit-btn').disabled = true;
+        }
+
+        function resetQuestion() {
+            selectedChoice = null;
+            answered = false;
+            
+            document.querySelectorAll('.choice').forEach(choice => {
+                choice.classList.remove('selected', 'correct', 'incorrect');
+            });
+            
+            document.getElementById('feedback').style.display = 'none';
+            document.querySelector('.submit-btn').disabled = false;
+        }
+    </script>
+</body>
+</html>

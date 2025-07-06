@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Energy Interpretation</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: white;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .option.selected {
+            background-color: #e6f7e6;
+            border-color: #28a745;
+            border-left: 5px solid #28a745;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            background-color: white;
+            border: 1px solid #ddd;
+        }
+        .correct {
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            border-left: 5px solid #dc3545;
+        }
+        .formula {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+            font-size: 1.1em;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kinetic Energy Interpretation</h1>
+    
+    <div class="question-container">
+        <p>The kinetic energy, in joules, of an object with mass 9 kg traveling at a speed of ( v ) m/s is given by:</p>
+        <div class="formula">\[ K(v) = \frac{9}{2}v^2 \]</div>
+        <p>Which of the following is the best interpretation of ( K(<span id="speed">34</span>) = <span id="energy">5,202</span> ) in this context?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) The object traveling at <span id="speedA">34</span> m/s has a kinetic energy of <span id="energyA">5,202</span> joules.</div>
+        <div class="option" data-value="B">B) The object traveling at <span id="speedB">340</span> m/s has a kinetic energy of <span id="energyB">5,202</span> joules.</div>
+        <div class="option" data-value="C">C) The object traveling at <span id="speedC">5,202</span> m/s has a kinetic energy of <span id="energyC">34</span> joules.</div>
+        <div class="option" data-value="D">D) The object traveling at <span id="speedD">23,409</span> m/s has a kinetic energy of <span id="energyD">34</span> joules.</div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <button id="newQuestion">Generate New Problem</button>
+
+    <script>
+        // Current question data
+        let currentQuestion = {
+            mass: 9,
+            speed: 34,
+            energy: 5202,
+            correctAnswer: 'A'
+        };
+
+        // Calculate kinetic energy
+        function calculateEnergy(mass, speed) {
+            return (mass/2) * speed * speed;
+        }
+
+        // Generate incorrect options
+        function generateIncorrectOptions(speed, energy) {
+            return [
+                { speed: speed * 10, energy: energy },
+                { speed: energy, energy: speed },
+                { speed: (energy * 4.5), energy: speed }
+            ];
+        }
+
+        // Generate new random problem
+        function generateQuestion() {
+            // Clear previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Generate random speed (20-50 m/s)
+            currentQuestion.speed = Math.floor(Math.random() * 31) + 20;
+            currentQuestion.energy = calculateEnergy(currentQuestion.mass, currentQuestion.speed);
+            
+            // Generate incorrect options
+            const incorrectOptions = generateIncorrectOptions(currentQuestion.speed, currentQuestion.energy);
+            
+            // Update question display
+            document.getElementById('speed').textContent = currentQuestion.speed;
+            document.getElementById('energy').textContent = currentQuestion.energy.toLocaleString();
+            
+            // Update options
+            document.getElementById('speedA').textContent = currentQuestion.speed;
+            document.getElementById('energyA').textContent = currentQuestion.energy.toLocaleString();
+            
+            document.getElementById('speedB').textContent = incorrectOptions[0].speed;
+            document.getElementById('energyB').textContent = incorrectOptions[0].energy.toLocaleString();
+            
+            document.getElementById('speedC').textContent = incorrectOptions[1].speed;
+            document.getElementById('energyC').textContent = incorrectOptions[1].energy;
+            
+            document.getElementById('speedD').textContent = incorrectOptions[2].speed;
+            document.getElementById('energyD').textContent = incorrectOptions[2].energy;
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Check answer and provide feedback
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ Correct! When the object travels at ${currentQuestion.speed} m/s, its kinetic energy is ${currentQuestion.energy.toLocaleString()} joules.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    feedback.innerHTML = `❌ Incorrect. The correct interpretation is that at ${currentQuestion.speed} m/s, the kinetic energy is ${currentQuestion.energy.toLocaleString()} joules.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+            });
+        });
+
+        // Generate new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Initialize the first question
+        window.addEventListener('DOMContentLoaded', function() {
+            generateQuestion();
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

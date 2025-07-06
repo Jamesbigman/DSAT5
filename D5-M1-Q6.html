@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Graph Question</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- MathJax for rendering mathematical expressions -->
+    <script>
+        // Configure MathJax to process inline math with $...$ delimiters
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-x: auto; /* Allow horizontal scrolling for small screens */
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            display: block;
+            max-width: 100%; /* Ensure canvas is responsive */
+            height: auto; /* Maintain aspect ratio */
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .feedback-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .feedback-incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .answer-input {
+            width: 100%;
+            max-width: 200px;
+            padding: 10px;
+            margin: 15px auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            text-align: center;
+            display: block; /* Center the input */
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">System of Linear Equations</h1>
+
+        <div class="question-section">
+            <p class="text-lg text-gray-700 mb-4" id="question-text">
+                The graph of a system of linear equations is shown. The solution to the system is $(x, y)$. What is the value of $x$? Enter your answer below:
+            </p>
+
+            <div class="diagram-container">
+                <canvas id="graphCanvas" width="600" height="600"></canvas>
+            </div>
+
+            <form id="answer-form">
+                <input type="number" id="user-answer" class="answer-input" placeholder="Enter your answer for x">
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                    <button type="button" class="btn btn-secondary" onclick="generateNewQuestion()">Generate New Question</button>
+                    <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+                </div>
+            </form>
+            <div id="feedback-message" class="feedback-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const questionTextElement = document.getElementById('question-text');
+        const userAnswerInput = document.getElementById('user-answer'); // New input element
+        const feedbackMessageElement = document.getElementById('feedback-message');
+
+        let currentQuestion = {}; // Stores the current question's data (solution)
+
+        // Function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates two linear equations that intersect at a specified integer point (x_int, y_int).
+         * Equation 1: y = m1*x + b1
+         * Equation 2: y = m2*x + b2
+         * @param {number} x_int - The x-coordinate of the intersection point.
+         * @param {number} y_int - The y-coordinate of the intersection point.
+         * @returns {object} An object containing m1, b1, m2, b2.
+         */
+        function generateIntersectingLines(x_int, y_int) {
+            let m1, b1, m2, b2;
+
+            // Generate m1 and m2 (slopes)
+            // Ensure slopes are different and not zero for clear intersection
+            do {
+                m1 = getRandomInt(-2, 2); // Slopes between -2 and 2
+            } while (m1 === 0);
+
+            do {
+                m2 = getRandomInt(-2, 2); // Slopes between -2 and 2
+            } while (m2 === 0 || m2 === m1); // Ensure m2 is not 0 or equal to m1
+
+            // Calculate b1 and b2 using the intersection point (y = mx + b => b = y - mx)
+            b1 = y_int - m1 * x_int;
+            b2 = y_int - m2 * x_int;
+
+            return { m1, b1, m2, b2 };
+        }
+
+        /**
+         * Draws the coordinate grid, axes, and two linear equations on the canvas.
+         * @param {number} m1 - Slope of the first line.
+         * @param {number} b1 - Y-intercept of the first line.
+         * @param {number} m2 - Slope of the second line.
+         * @param {number} b2 - Y-intercept of the second line.
+         * @param {number} x_int - X-coordinate of the intersection point.
+         * @param {number} y_int - Y-coordinate of the intersection point.
+         */
+        function drawGraph(m1, b1, m2, b2, x_int, y_int) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            const gridSize = 40; // Pixels per unit
+            const originX = canvas.width / 2;
+            const originY = canvas.height / 2;
+            const minCoord = -5; // Min value for axes labels
+            const maxCoord = 5;  // Max value for axes labels
+
+            // Draw grid lines
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let x = minCoord * gridSize; x <= maxCoord * gridSize; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(originX + x, 0);
+                ctx.lineTo(originX + x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = minCoord * gridSize; y <= maxCoord * gridSize; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, originY + y);
+                ctx.lineTo(canvas.width, originY + y);
+                ctx.stroke();
+            }
+
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); // X-axis
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvas.width, originY);
+            ctx.stroke();
+            ctx.beginPath(); // Y-axis
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvas.height);
+            ctx.stroke();
+
+            // Draw axis labels
+            ctx.fillStyle = '#555';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            for (let i = minCoord; i <= maxCoord; i++) {
+                if (i === 0) continue;
+                ctx.fillText(i, originX + i * gridSize, originY + 5); // X-labels
+            }
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = minCoord; i <= maxCoord; i++) {
+                if (i === 0) continue;
+                ctx.fillText(-i, originX - 5, originY + i * gridSize); // Y-labels (canvas y is inverted)
+            }
+
+            // Function to convert graph (x,y) to canvas (px,py)
+            const toCanvasCoords = (x, y) => ({
+                px: originX + x * gridSize,
+                py: originY - y * gridSize // Invert y-axis for canvas
+            });
+
+            // Draw Line 1 (y = m1*x + b1)
+            ctx.strokeStyle = '#FF0000'; // Red
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // Draw line across the full canvas width
+            const startX1 = -canvas.width / (2 * gridSize);
+            const endX1 = canvas.width / (2 * gridSize);
+            let p1_start = toCanvasCoords(startX1, m1 * startX1 + b1);
+            let p1_end = toCanvasCoords(endX1, m1 * endX1 + b1);
+            ctx.moveTo(p1_start.px, p1_start.py);
+            ctx.lineTo(p1_end.px, p1_end.py);
+            ctx.stroke();
+
+            // Draw Line 2 (y = m2*x + b2)
+            ctx.strokeStyle = '#0000FF'; // Blue
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const startX2 = -canvas.width / (2 * gridSize);
+            const endX2 = canvas.width / (2 * gridSize);
+            let p2_start = toCanvasCoords(startX2, m2 * startX2 + b2);
+            let p2_end = toCanvasCoords(endX2, m2 * endX2 + b2);
+            ctx.moveTo(p2_start.px, p2_start.py);
+            ctx.lineTo(p2_end.px, p2_end.py);
+            ctx.stroke();
+
+            // Highlight the intersection point
+            ctx.fillStyle = '#000'; // Black dot
+            ctx.beginPath();
+            const intersectionCanvas = toCanvasCoords(x_int, y_int);
+            ctx.arc(intersectionCanvas.px, intersectionCanvas.py, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Function to generate a new question
+        function generateNewQuestion() {
+            // Clear previous user input and feedback
+            userAnswerInput.value = '';
+            feedbackMessageElement.classList.add('hidden');
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            // 1. Generate a random integer intersection point (x_int, y_int)
+            // Keep points within a reasonable range for visibility on graph
+            const x_int = getRandomInt(1, 5);
+            const y_int = getRandomInt(1, 5);
+
+            // 2. Generate two linear equations that intersect at (x_int, y_int)
+            const { m1, b1, m2, b2 } = generateIntersectingLines(x_int, y_int);
+
+            // 3. Draw the graph
+            drawGraph(m1, b1, m2, b2, x_int, y_int);
+
+            // 4. Set the question text
+            // MathJax will render the $...$ content
+            questionTextElement.innerHTML = `
+                The graph of a system of linear equations is shown. The solution to the system is $(x, y)$. What is the value of $x$? Enter your answer below:
+            `;
+
+            // Store the correct x-value for feedback
+            currentQuestion = {
+                x_int: x_int,
+                y_int: y_int,
+                correctValue: x_int
+            };
+
+            // Trigger MathJax typesetting after updating the DOM
+            if (window.MathJax) {
+                MathJax.typesetPromise([questionTextElement]).catch(function (err) {
+                    console.error('MathJax typesetting failed for questionTextElement:', err);
+                });
+            }
+        }
+
+        // Function to submit the answer
+        function submitAnswer() {
+            const userAnswer = parseInt(userAnswerInput.value); // Get integer value from input
+
+            if (isNaN(userAnswer)) {
+                feedbackMessageElement.textContent = 'Please enter a number.';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            } else if (userAnswer === currentQuestion.correctValue) {
+                feedbackMessageElement.textContent = 'Correct Answer!';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-incorrect');
+                feedbackMessageElement.classList.add('feedback-correct');
+            } else {
+                feedbackMessageElement.textContent = `Incorrect. The correct answer was ${currentQuestion.correctValue}.`;
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            }
+        }
+
+        // Function to export content as PDF
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export'); // Element to capture
+
+            // Use html2canvas to render the HTML element as a canvas
+            // Scale 1 for smaller file size, useCORS for external resources if any
+            const canvas = await html2canvas(element, {
+                scale: 1,
+                useCORS: true,
+                logging: false,
+            });
+
+            // Use JPEG with quality 0.8 for good compression, then add to PDF
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save('dynamic_math_question.pdf');
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            generateNewQuestion(); // Generate the first question when the page loads
+        };
+
+        // Make the canvas responsive to window resizing (redraws graph)
+        window.addEventListener('resize', () => {
+            // Re-generate the current question to redraw the graph with new dimensions
+            // This ensures the graph adapts if the canvas size effectively changes
+            generateNewQuestion();
+        });
+    </script>
+</body>
+</html>

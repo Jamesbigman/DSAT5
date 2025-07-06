@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Problem: Linear Equation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- MathJax for rendering mathematical expressions -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Standardized font family */
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        /* Standardized font size and line height for main text */
+        .question-section p {
+            font-size: 1.1em; /* Consistent with previous text size */
+            line-height: 1.6; /* Slightly increased for better readability */
+            margin-bottom: 15px; /* Adjusted margin */
+        }
+        .equation-display {
+            font-family: 'Inter', sans-serif; /* Standardized font family */
+            font-size: 1.6em; /* Slightly larger than text, but uniform font */
+            text-align: center;
+            margin: 20px 0;
+            line-height: 1.5;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .feedback-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .feedback-incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .answer-input {
+            width: 100%;
+            max-width: 200px;
+            padding: 10px;
+            margin: 15px auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            text-align: center;
+            display: block; /* Center the input */
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <!-- Removed h1 title -->
+
+        <div class="question-section">
+            <p class="text-lg text-gray-700 mb-4" id="word-problem-text">
+                <!-- Word problem text will be dynamically generated here -->
+            </p>
+
+            <div class="equation-display" id="equation-display">
+                <!-- Equation will be dynamically generated here -->
+            </div>
+            <p class="text-lg text-gray-700 mb-4" id="question-text">
+                According to the equation, what is the price, in dollars, of each smaller container? Enter your answer below:
+            </p>
+
+            <form id="answer-form">
+                <input type="number" step="0.01" id="user-answer" class="answer-input" placeholder="Enter price of smaller container">
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                    <button type="button" class="btn btn-secondary" onclick="generateNewQuestion()">Generate New Question</button>
+                    <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+                </div>
+            </form>
+            <div id="feedback-message" class="feedback-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const wordProblemTextElement = document.getElementById('word-problem-text');
+        const equationDisplayElement = document.getElementById('equation-display');
+        const questionTextElement = document.getElementById('question-text');
+        const userAnswerInput = document.getElementById('user-answer');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+
+        let currentQuestion = {}; // Stores the current question's data (correct answer)
+
+        // Function to generate a random number with two decimal places
+        function getRandomDecimal(min, max) {
+            return (Math.random() * (max - min) + min).toFixed(2);
+        }
+
+        // Function to generate a new question
+        function generateNewQuestion() {
+            // Clear previous user input and feedback
+            userAnswerInput.value = '';
+            feedbackMessageElement.classList.add('hidden');
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            // Generate random values for the problem
+            const item1Name = "smaller containers of blueberries";
+            const item2Name = "larger containers of blueberries";
+            const storeName = "a store";
+            const totalSales = getRandomDecimal(500, 1500); // Total sales in dollars
+
+            // Generate prices for x and y
+            const priceX = getRandomDecimal(3, 8); // Price of smaller container (x)
+            const priceY = getRandomDecimal(5, 10); // Price of larger container (y)
+
+            // Construct the word problem text
+            const wordProblemText = `
+                ${storeName} sells two different-sized containers of blueberries.
+                The store’s sales of these blueberries totaled $${totalSales} dollars last month.
+                The equation $${priceX}x + ${priceY}y = ${totalSales}$ represents this situation,
+                where $x$ is the number of ${item1Name} sold and $y$ is the number of ${item2Name} sold.
+            `;
+
+            // Construct the equation for display
+            const equationHtml = `$$ ${priceX}x + ${priceY}y = ${totalSales} $$`;
+
+            // The question asks for the price of each smaller container, which is priceX
+            const correctAnswer = parseFloat(priceX);
+
+            // Update DOM elements
+            wordProblemTextElement.innerHTML = wordProblemText;
+            equationDisplayElement.innerHTML = equationHtml;
+            questionTextElement.innerHTML = `
+                According to the equation, what is the price, in dollars, of each smaller container? Enter your answer below:
+            `;
+
+            // Store the correct answer
+            currentQuestion = {
+                correctValue: correctAnswer
+            };
+
+            // Trigger MathJax typesetting after updating the DOM
+            if (window.MathJax) {
+                MathJax.typesetPromise([wordProblemTextElement, equationDisplayElement, questionTextElement]).catch(function (err) {
+                    console.error('MathJax typesetting failed:', err);
+                });
+            }
+        }
+
+        // Function to submit the answer
+        function submitAnswer() {
+            const userAnswer = parseFloat(userAnswerInput.value); // Get float value from input
+
+            // Use a small tolerance for floating point comparison
+            const tolerance = 0.001;
+
+            if (isNaN(userAnswer)) {
+                feedbackMessageElement.textContent = 'Please enter a number.';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            } else if (Math.abs(userAnswer - currentQuestion.correctValue) < tolerance) {
+                feedbackMessageElement.textContent = 'Correct Answer!';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-incorrect');
+                feedbackMessageElement.classList.add('feedback-correct');
+            } else {
+                feedbackMessageElement.textContent = `Incorrect. The correct answer was $${currentQuestion.correctValue.toFixed(2)}$.`;
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            }
+        }
+
+        // Function to export content as PDF
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export'); // Element to capture
+
+            const canvas = await html2canvas(element, {
+                scale: 1, // Optimized for smaller PDF file size
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with quality 0.8
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save('word_problem_linear_equation.pdf');
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            generateNewQuestion(); // Generate the first question when the page loads
+        };
+    </script>
+</body>
+</html>

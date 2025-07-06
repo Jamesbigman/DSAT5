@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Electric Flux Questions</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .problem-info {
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+            border: 1px solid #ccc;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .option-content {
+            font-size: 18px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+        
+        .coordinate {
+            display: inline-block;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="problem-info" id="problemInfo">
+            </div>
+        
+        <div class="question-text" id="questionText">
+            </div>
+        
+        <div class="options" id="options">
+            </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateQuestion() {
+            // Define parameters based on the image's problem structure
+            const smallerSide = getRandomInt(1, 5); // Side length of smaller square
+            const largerSide = smallerSide * 3; // Side length of larger square
+
+            // Electric field strength from the image or randomized
+            const electricFieldStrength = getRandomInt(20, 40); // volts per meter
+
+            const areaSmaller = smallerSide * smallerSide;
+            const areaLarger = largerSide * largerSide;
+            const totalArea = areaSmaller + areaLarger;
+
+            const fluxSmaller = electricFieldStrength * areaSmaller;
+            const fluxLarger = electricFieldStrength * areaLarger;
+            const totalFlux = electricFieldStrength * totalArea;
+
+            // Problem statement to align with the image's specific question type
+            const problemInfo = `An electric field with strength ${electricFieldStrength.toFixed(2)} volts per meter passes uniformly through a flat surface perpendicular to it. This surface consists of two adjacent squares. The side length of the larger square is ${largerSide} meters, which is 3 times the side length of the smaller square (${smallerSide} meters).`;
+            
+            const questionText = `If the total electric flux of the electric field through this surface is ${totalFlux.toFixed(0)} volts &#x2022; meters, what is the electric flux, in volts &#x2022; meters, of the electric field through the larger square?`;
+
+            const correctAnswer = fluxLarger.toFixed(0);
+
+            // Generate plausible wrong answers
+            const wrongAnswers = new Set();
+            while (wrongAnswers.size < 3) {
+                let wrongAnswer;
+                const type = getRandomInt(1, 4);
+                if (type === 1) { // Flux through smaller square
+                    wrongAnswer = fluxSmaller;
+                } else if (type === 2) { // Total flux (already given in question but as a distractor)
+                    wrongAnswer = totalFlux;
+                } else if (type === 3) { // Incorrect calculation (e.g., sum of side lengths * E)
+                    wrongAnswer = electricFieldStrength * (smallerSide + largerSide);
+                } else { // Another random value within a reasonable range
+                    wrongAnswer = getRandomInt(Math.floor(fluxSmaller * 0.5), Math.ceil(totalFlux * 1.5));
+                }
+                if (Math.abs(wrongAnswer - parseFloat(correctAnswer)) > 1) { // Ensure it's not too close to the correct answer
+                    wrongAnswers.add(wrongAnswer.toFixed(0));
+                }
+            }
+
+            const options = [...Array.from(wrongAnswers), correctAnswer].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                problemInfo,
+                questionText,
+                correctAnswer,
+                options,
+                correctIndex: options.indexOf(correctAnswer),
+                electricFieldStrength,
+                smallerSide,
+                largerSide,
+                fluxSmaller,
+                fluxLarger,
+                totalFlux
+            };
+        }
+
+        function displayQuestion() {
+            const problemInfoDiv = document.getElementById('problemInfo');
+            const questionTextDiv = document.getElementById('questionText');
+            const optionsDiv = document.getElementById('options');
+            
+            problemInfoDiv.innerHTML = currentQuestion.problemInfo;
+            questionTextDiv.innerHTML = currentQuestion.questionText;
+            
+            optionsDiv.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span class="option-content">${option}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> Your understanding of electric flux and area calculations is spot on.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> Remember the formula for electric flux through a flat surface perpendicular to the electric field is &#x3A6; = E &#x2022; A (Electric Field Strength &#x2022; Area).
+                    <br>Consider how the areas of the two squares relate.
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            
+            let explanation = '<strong>Complete Solution:</strong><br>';
+            const E = currentQuestion.electricFieldStrength;
+            const sS = currentQuestion.smallerSide;
+            const sL = currentQuestion.largerSide;
+            const fluxS = currentQuestion.fluxSmaller;
+            const fluxL = currentQuestion.fluxLarger;
+            const totalF = currentQuestion.totalFlux;
+
+            explanation += `1. Let $s_s$ be the side length of the smaller square and $s_l$ be the side length of the larger square.<br>`;
+            explanation += `   From the problem, $s_l = 3 \\cdot s_s$. We have $s_s = ${sS}$ m, so $s_l = ${sL}$ m.<br>`;
+            explanation += `2. Calculate the area of the smaller square: $A_s = s_s^2 = ${sS}^2 = ${sS*sS}$ m$^2$.<br>`;
+            explanation += `3. Calculate the area of the larger square: $A_l = s_l^2 = ${sL}^2 = ${sL*sL}$ m$^2$.<br>`;
+            explanation += `4. The total area of the surface is $A_{total} = A_s + A_l = ${sS*sS} + ${sL*sL} = ${sS*sS + sL*sL}$ m$^2$.<br>`;
+            explanation += `5. The electric field strength is $E = ${E.toFixed(2)}$ volts/meter.<br>`;
+            explanation += `6. The electric flux through a surface perpendicular to the electric field is &#x3A6; = E &#x2022; A.<br>`;
+            explanation += `7. We are given the total electric flux &#x3A6;<sub>total</sub> = ${totalF.toFixed(0)} volts &#x2022; meters.<br>`;
+            explanation += `   Since &#x3A6;<sub>total</sub> = E &#x2022; A<sub>total</sub> = E &#x2022; (A<sub>s</sub> + A<sub>l</sub>) = &#x3A6;<sub>s</sub> + &#x3A6;<sub>l</sub>.<br>`;
+            explanation += `8. The question asks for the electric flux through the larger square, &#x3A6;<sub>l</sub>.<br>`;
+            explanation += `   &#x3A6;<sub>l</sub> = E &#x2022; A<sub>l</sub> = ${E.toFixed(2)} &#x2022; ${sL*sL} = ${fluxL.toFixed(0)}$ volts &#x2022; meters.<br>`;
+            
+            feedback.innerHTML = explanation;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

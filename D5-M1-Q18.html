@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Equation Interpretation Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .question-box {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .option {
+      border: 1px solid #ccc;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .option:hover {
+      background-color: #f1f1f1;
+    }
+    .option.correct {
+      background-color: #d4edda;
+      border-color: #28a745;
+    }
+    .option.incorrect {
+      background-color: #f8d7da;
+      border-color: #dc3545;
+    }
+    .feedback {
+      display: none;
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .correct-feedback {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .incorrect-feedback {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .solution-steps {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e2e3e5;
+      border-radius: 5px;
+      display: none;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h2>Equation Interpretation Generator</h2>
+  <div class="question-box">
+    <p id="questionText"></p>
+    <p style="text-align: center;"><strong id="equationLatex">\( y - 5x = 6 \)</strong></p>
+    <p>What is the best interpretation of the constant in this context?</p>
+
+    <div class="option" data-key="A" id="optionA"></div>
+    <div class="option" data-key="B" id="optionB"></div>
+    <div class="option" data-key="C" id="optionC"></div>
+    <div class="option" data-key="D" id="optionD"></div>
+
+    <div class="feedback" id="feedbackBox"></div>
+
+    <div class="solution-steps" id="solutionSteps">
+      <h4>Solution Steps:</h4>
+      <ol id="stepsList"></ol>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button id="newQuestion">Generate New Question</button>
+    <button id="exportPDF">Export to PDF</button>
+  </div>
+
+  <script>
+    const options = document.querySelectorAll('.option');
+    const feedback = document.getElementById('feedbackBox');
+    const solutionSteps = document.getElementById('solutionSteps');
+    const stepsList = document.getElementById('stepsList');
+    const equationLatex = document.getElementById('equationLatex');
+
+    let currentQuestion = {};
+
+    function generateNewQuestion() {
+      // Clear previous feedback
+      feedback.style.display = 'none';
+      solutionSteps.style.display = 'none';
+      options.forEach(opt => opt.classList.remove('correct', 'incorrect'));
+
+      // Randomize values
+      const varSymbol = 'x';
+      const multiplier = Math.floor(Math.random() * 5) + 2; // 2–6
+      const constant = Math.floor(Math.random() * 10) + 3; // 3–12
+      const context = "used fabric measuring " + multiplier + " yards";
+      const questionText = `Kaylani ${context} to make each suit for a men’s choir. The relationship between the number of suits, \\(${varSymbol}\\), and the total fabric purchased, \\(y\\), is represented by the equation:`;
+      const rearranged = `y = ${multiplier}${varSymbol} + ${constant}`;
+
+      // Store data
+      currentQuestion = {
+        context,
+        multiplier,
+        constant,
+        correct: `Kaylani purchased ${constant} more yards of fabric than she used to make the suits.`,
+        latex: `y - ${multiplier}${varSymbol} = ${constant}`,
+        varSymbol,
+        equation: rearranged
+      };
+
+      // Update DOM
+      document.getElementById('questionText').innerHTML = questionText;
+      equationLatex.textContent = `\\(${currentQuestion.latex}\\)`;
+
+      const distractors = [
+        `Kaylani made ${constant} suits.`,
+        `Kaylani used a total of ${constant} yards of fabric to make the suits.`,
+        `Kaylani purchased a total of ${constant} yards of fabric.`,
+        currentQuestion.correct
+      ].sort(() => Math.random() - 0.5);
+
+      ['A', 'B', 'C', 'D'].forEach((label, i) => {
+        document.getElementById(`option${label}`).textContent = distractors[i];
+        document.getElementById(`option${label}`).classList.remove('correct', 'incorrect');
+      });
+
+      currentQuestion.correctLabel = ['A', 'B', 'C', 'D'][distractors.indexOf(currentQuestion.correct)];
+
+      // Solution steps
+      stepsList.innerHTML = `
+        <li>The equation is rearranged as: ${currentQuestion.equation}</li>
+        <li>The term ${multiplier}${varSymbol} represents fabric used for suits.</li>
+        <li>The constant ${constant} means she purchased ${constant} yards more than needed.</li>
+      `;
+
+      if (typeof MathJax !== 'undefined') {
+        MathJax.typesetPromise();
+      }
+    }
+
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        options.forEach(o => o.classList.remove('correct', 'incorrect'));
+        const selected = option.getAttribute('data-key');
+
+        if (selected === currentQuestion.correctLabel) {
+          option.classList.add('correct');
+          feedback.textContent = '✅ Correct! ' + currentQuestion.correct;
+          feedback.className = 'feedback correct-feedback';
+        } else {
+          option.classList.add('incorrect');
+          feedback.textContent = '❌ Incorrect. Review how the constant relates to total fabric.';
+          feedback.className = 'feedback incorrect-feedback';
+        }
+
+        feedback.style.display = 'block';
+        solutionSteps.style.display = 'block';
+      });
+    });
+
+    document.getElementById('newQuestion').addEventListener('click', generateNewQuestion);
+
+    document.getElementById('exportPDF').addEventListener('click', () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text('Equation Interpretation Question', 20, 20);
+
+      const y = 30;
+      doc.setFontSize(12);
+      doc.text(`Context: Kaylani ${currentQuestion.context}.`, 20, y);
+      doc.text(`Equation: ${currentQuestion.latex}`, 20, y + 10);
+      doc.text(`Question: What is the best interpretation of the constant?`, 20, y + 20);
+
+      const opts = ['A', 'B', 'C', 'D'].map(label => {
+        const text = document.getElementById(`option${label}`).textContent;
+        return `${label}) ${text}`;
+      });
+
+      opts.forEach((text, i) => {
+        doc.text(text, 25, y + 35 + i * 10);
+      });
+
+      doc.setFontSize(14);
+      doc.text('Solution Steps:', 20, y + 85);
+      doc.setFontSize(12);
+      let sy = y + 95;
+      stepsList.querySelectorAll('li').forEach((step, idx) => {
+        doc.text(`${idx + 1}. ${step.textContent}`, 25, sy);
+        sy += 10;
+      });
+
+      doc.save('Equation_Interpretation.pdf');
+    });
+
+    // Generate first question
+    generateNewQuestion();
+  </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabbit Calorie Equation Generator</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .question-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rabbit Calorie Equation</h1>
+    
+    <div class="question-container">
+        <p>A veterinarian recommends that each day a certain rabbit should eat 
+           <span id="calPerPound">25</span> calories per pound of the rabbit's weight, 
+           plus an additional <span id="extraCal">11</span> calories.</p>
+        <p>Which equation represents this situation, where ( c ) is the total number of calories 
+           recommended daily if the rabbit weighs ( x ) pounds?</p>
+    </div>
+    
+    <div class="options" id="options">
+        <div class="option" data-value="A">A) ( c = <span id="optionA">25x</span> )</div>
+        <div class="option" data-value="B">B) ( c = <span id="optionB">36x</span> )</div>
+        <div class="option" data-value="C">C) ( c = <span id="optionC">11x + 25</span> )</div>
+        <div class="option" data-value="D">D) ( c = <span id="optionD">25x + 11</span> )</div>
+    </div>
+    
+    <div class="feedback" id="feedback"></div>
+    
+    <button id="newQuestion">Generate New Question</button>
+
+    <script>
+        // Current question data
+        let currentQuestion = {
+            calPerPound: 25,
+            extraCal: 11,
+            correctAnswer: 'D'
+        };
+
+        // Generate new random question
+        function generateQuestion() {
+            // Clear previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Generate random values (multiples of 5 for calories per pound, 1-20 for extra calories)
+            currentQuestion.calPerPound = Math.floor(Math.random() * 10 + 1) * 5;
+            currentQuestion.extraCal = Math.floor(Math.random() * 20) + 1;
+            
+            // Update question text
+            document.getElementById('calPerPound').textContent = currentQuestion.calPerPound;
+            document.getElementById('extraCal').textContent = currentQuestion.extraCal;
+            
+            // Update options
+            document.getElementById('optionA').textContent = `${currentQuestion.calPerPound}x`;
+            document.getElementById('optionB').textContent = `${currentQuestion.calPerPound + currentQuestion.extraCal}x`;
+            document.getElementById('optionC').textContent = `${currentQuestion.extraCal}x + ${currentQuestion.calPerPound}`;
+            document.getElementById('optionD').textContent = `${currentQuestion.calPerPound}x + ${currentQuestion.extraCal}`;
+            
+            // Render MathJax
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+
+        // Check answer and provide feedback
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `✅ Correct! The equation is \( c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal} \)`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    feedback.innerHTML = `❌ Incorrect. The correct equation is \( c = ${currentQuestion.calPerPound}x + ${currentQuestion.extraCal} \)`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+                
+                // Re-render MathJax
+                if (typeof MathJax !== 'undefined') {
+                    MathJax.typeset();
+                }
+            });
+        });
+
+        // Generate new question button
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        // Initialize MathJax on load
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

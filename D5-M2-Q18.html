@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAT Math Question Generator</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #000000;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 2px solid #000000;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-container {
+            background: #ffffff;
+            border: 3px solid #000000;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .question-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .question {
+            font-size: 1.4em;
+            margin-bottom: 25px;
+            font-weight: 500;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option {
+            background: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #000000;
+        }
+
+        .option:hover {
+            background: #f0f0f0;
+            border-color: #000000;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .option.correct {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .option.incorrect {
+            background: #666666;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: #ffffff;
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #cccccc;
+            color: #666666;
+            border-color: #cccccc;
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feedback.show {
+            opacity: 1;
+        }
+
+        .feedback.correct {
+            background: #f0f0f0;
+            color: #000000;
+            border: 2px solid #000000;
+        }
+
+        .feedback.incorrect {
+            background: #e0e0e0;
+            color: #000000;
+            border: 2px solid #000000;
+        }
+
+        .solution {
+            background: #f8f8f8;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #000000;
+        }
+
+        .score {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #000000;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .question {
+                font-size: 1.2em;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        
+
+        
+        <div class="question-container">
+            <div class="question" id="question"></div>
+            <div class="options" id="options"></div>
+        </div>
+        
+        <div class="buttons">
+            <button id="checkBtn" onclick="checkAnswer()" disabled>Check Answer</button>
+            <button id="newQuestionBtn" onclick="generateNewQuestion()">Generate New Question</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+
+        function generateNewQuestion() {
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('checkBtn').disabled = true;
+            document.getElementById('feedback').classList.remove('show');
+            
+            // Generate random values
+            const bases = [2, 3, 4, 5, 6];
+            const base = bases[Math.floor(Math.random() * bases.length)];
+            const multiplier = Math.floor(Math.random() * 6) + 2; // 2-7
+            const result = base * multiplier;
+            const queryMultiplier = Math.floor(Math.random() * 8) + 3; // 3-10
+            
+            // Calculate correct answer
+            const correctAnswer = queryMultiplier * result;
+            
+            // Generate wrong answers
+            const wrongAnswers = [];
+            while (wrongAnswers.length < 3) {
+                let wrong;
+                if (Math.random() < 0.5) {
+                    // Common mistake: multiply by base instead of result
+                    wrong = queryMultiplier * base;
+                } else {
+                    // Other plausible wrong answers
+                    wrong = correctAnswer + (Math.floor(Math.random() * 20) - 10) * multiplier;
+                }
+                
+                if (wrong > 0 && wrong !== correctAnswer && !wrongAnswers.includes(wrong)) {
+                    wrongAnswers.push(wrong);
+                }
+            }
+            
+            // Create options array
+            const options = [correctAnswer, ...wrongAnswers];
+            
+            // Shuffle options
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+            
+            // Store current question data
+            currentQuestion = {
+                base: base,
+                multiplier: multiplier,
+                result: result,
+                queryMultiplier: queryMultiplier,
+                correctAnswer: correctAnswer,
+                options: options,
+                explanation: `Since ${base}√x = ${result}, we can square both sides to get ${base}²x = ${result}². This gives us ${base * base}x = ${result * result}, so x = ${result * result / (base * base)} = ${result / base}². Therefore, ${queryMultiplier}x = ${queryMultiplier} × ${result / base}² = ${correctAnswer}.`
+            };
+            
+            // Display question
+            document.getElementById('question').innerHTML = 
+                `If ${base}√x = ${result}, what is the value of ${queryMultiplier}x?`;
+            
+            // Display options
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            const letters = ['A', 'B', 'C', 'D'];
+            options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.innerHTML = `${letters[index]}) ${option}`;
+                optionElement.onclick = () => selectOption(index, optionElement);
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        function selectOption(index, element) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selection to clicked option
+            element.classList.add('selected');
+            selectedOption = index;
+            
+            // Enable check button
+            document.getElementById('checkBtn').disabled = false;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null || answered) return;
+            
+            answered = true;
+            
+            const options = document.querySelectorAll('.option');
+            const correctIndex = currentQuestion.options.indexOf(currentQuestion.correctAnswer);
+            
+            // Show correct answer
+            options[correctIndex].classList.add('correct');
+            
+            // Check if selected answer is correct
+            if (selectedOption === correctIndex) {
+                showFeedback(true, "Correct! " + currentQuestion.explanation);
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                showFeedback(false, "Incorrect. " + currentQuestion.explanation);
+            }
+            
+            // Disable check button
+            document.getElementById('checkBtn').disabled = true;
+        }
+
+        function showFeedback(isCorrect, message) {
+            const feedback = document.getElementById('feedback');
+            feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedback.innerHTML = `
+                <div>${message}</div>
+                <div class="solution">
+                    <strong>Solution:</strong> ${currentQuestion.explanation}
+                </div>
+            `;
+            feedback.classList.add('show');
+        }
+
+        // Generate initial question
+        generateNewQuestion();
+    </script>
+</body>
+</html>

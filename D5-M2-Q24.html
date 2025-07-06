@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Quadratic Discriminant Question</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .option-content {
+            font-size: 18px;
+            font-style: italic;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+        
+        .equation {
+            font-size: 20px;
+            font-style: italic;
+            margin: 5px 0;
+        }
+        
+        .superscript {
+            font-size: 14px;
+            vertical-align: super;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-text" id="questionText">
+            Which quadratic equation has no real solutions?
+        </div>
+        
+        <div class="options" id="options">
+            <!-- Options will be generated here -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function formatQuadratic(a, b, c) {
+            let equation = '';
+            
+            // Handle 'a' coefficient
+            if (a === 1) {
+                equation += 'x<span class="superscript">2</span>';
+            } else if (a === -1) {
+                equation += '-x<span class="superscript">2</span>';
+            } else {
+                equation += `${a}x<span class="superscript">2</span>`;
+            }
+            
+            // Handle 'b' coefficient
+            if (b > 0) {
+                equation += ` + ${b === 1 ? '' : b}x`;
+            } else if (b < 0) {
+                equation += ` - ${b === -1 ? '' : Math.abs(b)}x`;
+            }
+            
+            // Handle 'c' coefficient
+            if (c > 0) {
+                equation += ` + ${c}`;
+            } else if (c < 0) {
+                equation += ` - ${Math.abs(c)}`;
+            }
+            
+            equation += ' = 0';
+            return equation;
+        }
+
+        function calculateDiscriminant(a, b, c) {
+            return b * b - 4 * a * c;
+        }
+
+        function generateQuestion() {
+            const questionTypes = [
+                'no_real_solutions',
+                'real_solutions',
+                'one_real_solution',
+                'two_real_solutions'
+            ];
+            
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+            
+            let questionText = '';
+            let equations = [];
+            let correctIndex = -1;
+            
+            switch(questionType) {
+                case 'no_real_solutions':
+                    questionText = 'Which quadratic equation has no real solutions?';
+                    // Generate equations, one with negative discriminant
+                    equations = generateEquationsWithDiscriminants([-1, 1, 1, 1], [1, 2, 3, 4]);
+                    correctIndex = 0;
+                    break;
+                    
+                case 'real_solutions':
+                    questionText = 'Which quadratic equation has real solutions?';
+                    // Generate equations, one with positive discriminant
+                    equations = generateEquationsWithDiscriminants([1, -1, -1, -1], [1, 2, 3, 4]);
+                    correctIndex = 0;
+                    break;
+                    
+                case 'one_real_solution':
+                    questionText = 'Which quadratic equation has exactly one real solution?';
+                    // Generate equations, one with zero discriminant
+                    equations = generateEquationsWithDiscriminants([0, 1, -1, 1], [1, 2, 3, 4]);
+                    correctIndex = 0;
+                    break;
+                    
+                case 'two_real_solutions':
+                    questionText = 'Which quadratic equation has two distinct real solutions?';
+                    // Generate equations, one with positive discriminant
+                    equations = generateEquationsWithDiscriminants([1, -1, 0, -1], [1, 2, 3, 4]);
+                    correctIndex = 0;
+                    break;
+            }
+            
+            // Shuffle the equations
+            const shuffledData = shuffleWithCorrectIndex(equations, correctIndex);
+            
+            currentQuestion = {
+                questionText,
+                equations: shuffledData.equations,
+                correctIndex: shuffledData.correctIndex,
+                questionType
+            };
+        }
+
+        function generateEquationsWithDiscriminants(discriminantSigns, seeds) {
+            const equations = [];
+            
+            for (let i = 0; i < discriminantSigns.length; i++) {
+                const seed = seeds[i];
+                let a, b, c;
+                
+                do {
+                    a = Math.floor(Math.random() * 5) + 1; // 1-5
+                    b = Math.floor(Math.random() * 20) - 10; // -10 to 9
+                    c = Math.floor(Math.random() * 20) - 10; // -10 to 9
+                    
+                    if (b === 0) b = seed; // Avoid b = 0
+                    
+                    const discriminant = calculateDiscriminant(a, b, c);
+                    
+                    if (discriminantSigns[i] === 1 && discriminant > 0) break;
+                    if (discriminantSigns[i] === -1 && discriminant < 0) break;
+                    if (discriminantSigns[i] === 0 && discriminant === 0) break;
+                    
+                    // Adjust c to get desired discriminant sign
+                    if (discriminantSigns[i] === 1) {
+                        c = Math.floor((b * b - 1) / (4 * a));
+                    } else if (discriminantSigns[i] === -1) {
+                        c = Math.floor((b * b + 1) / (4 * a)) + 1;
+                    } else if (discriminantSigns[i] === 0) {
+                        c = Math.floor(b * b / (4 * a));
+                    }
+                } while (false);
+                
+                equations.push({ a, b, c });
+            }
+            
+            return equations;
+        }
+
+        function shuffleWithCorrectIndex(array, correctIndex) {
+            const correctItem = array[correctIndex];
+            const shuffled = [...array];
+            
+            // Fisher-Yates shuffle
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            
+            const newCorrectIndex = shuffled.findIndex(item => 
+                item.a === correctItem.a && item.b === correctItem.b && item.c === correctItem.c
+            );
+            
+            return { equations: shuffled, correctIndex: newCorrectIndex };
+        }
+
+        function displayQuestion() {
+            const questionTextDiv = document.getElementById('questionText');
+            const optionsDiv = document.getElementById('options');
+            
+            questionTextDiv.textContent = currentQuestion.questionText;
+            
+            // Display options
+            optionsDiv.innerHTML = '';
+            currentQuestion.equations.forEach((eq, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span class="option-content equation">${formatQuadratic(eq.a, eq.b, eq.c)}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Select new option
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> You correctly identified the quadratic equation with the right discriminant properties.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> Remember: the discriminant b² - 4ac determines the nature of solutions.
+                    <br>• If b² - 4ac < 0: no real solutions
+                    <br>• If b² - 4ac = 0: one real solution
+                    <br>• If b² - 4ac > 0: two real solutions
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            
+            const correctEq = currentQuestion.equations[currentQuestion.correctIndex];
+            const discriminant = calculateDiscriminant(correctEq.a, correctEq.b, correctEq.c);
+            
+            let explanation = '<strong>Complete Solution:</strong><br>';
+            explanation += `For the correct answer: ${formatQuadratic(correctEq.a, correctEq.b, correctEq.c)}<br>`;
+            explanation += `The discriminant is: b² - 4ac = (${correctEq.b})² - 4(${correctEq.a})(${correctEq.c})<br>`;
+            explanation += `= ${correctEq.b * correctEq.b} - ${4 * correctEq.a * correctEq.c} = ${discriminant}<br>`;
+            
+            if (discriminant < 0) {
+                explanation += 'Since the discriminant is negative, there are no real solutions.';
+            } else if (discriminant === 0) {
+                explanation += 'Since the discriminant is zero, there is exactly one real solution.';
+            } else {
+                explanation += 'Since the discriminant is positive, there are two distinct real solutions.';
+            }
+            
+            feedback.innerHTML = explanation;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

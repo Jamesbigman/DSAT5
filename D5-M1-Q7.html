@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Range Question</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px; /* Adjusted max-width for content */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .data-display {
+            font-family: monospace; /* Monospace for number lists */
+            font-size: 1.8em;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .feedback-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .feedback-incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .answer-input {
+            width: 100%;
+            max-width: 200px;
+            padding: 10px;
+            margin: 15px auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            text-align: center;
+            display: block; /* Center the input */
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Data Analysis: Range</h1>
+
+        <div class="question-section">
+            <p class="text-lg text-gray-700 mb-4" id="question-intro-text">
+                Consider the following set of scores:
+            </p>
+
+            <div class="data-display" id="data-set">
+                <!-- Numbers will be dynamically generated here -->
+            </div>
+
+            <p class="text-lg text-gray-700 mb-4" id="question-text">
+                What is the range of the scores shown? Enter your answer below:
+            </p>
+
+            <form id="answer-form">
+                <input type="number" id="user-answer" class="answer-input" placeholder="Enter the range">
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                    <button type="button" class="btn btn-secondary" onclick="generateNewQuestion()">Generate New Question</button>
+                    <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+                </div>
+            </form>
+            <div id="feedback-message" class="feedback-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const dataSetElement = document.getElementById('data-set');
+        const userAnswerInput = document.getElementById('user-answer'); // New input element
+        const feedbackMessageElement = document.getElementById('feedback-message');
+
+        let currentQuestion = {}; // Stores the current question's data (correct answer)
+
+        // Function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates a sorted array of random numbers.
+         * @param {number} count - Number of elements in the array.
+         * @param {number} minVal - Minimum possible value for a number.
+         * @param {number} maxVal - Maximum possible value for a number.
+         * @returns {Array<number>} A sorted array of numbers.
+         */
+        function generateSortedNumberSet(count, minVal, maxVal) {
+            const numbers = [];
+            for (let i = 0; i < count; i++) {
+                numbers.push(getRandomInt(minVal, maxVal));
+            }
+            return numbers.sort((a, b) => a - b); // Sort in ascending order
+        }
+
+        // Function to generate a new question
+        function generateNewQuestion() {
+            // Clear previous user input and feedback
+            userAnswerInput.value = '';
+            feedbackMessageElement.classList.add('hidden');
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            const numberOfScores = getRandomInt(6, 9); // Generate between 6 and 9 scores
+            const minScore = getRandomInt(10, 30);
+            const maxScore = getRandomInt(minScore + 20, minScore + 50); // Ensure a reasonable range difference
+
+            const scores = generateSortedNumberSet(numberOfScores, minScore, maxScore);
+
+            // Calculate the correct range
+            const correctRange = scores[scores.length - 1] - scores[0];
+
+            // Display the scores
+            dataSetElement.textContent = scores.join(', ');
+
+            // Store the correct range for feedback
+            currentQuestion = {
+                correctValue: correctRange
+            };
+        }
+
+        // Function to submit the answer
+        function submitAnswer() {
+            const userAnswer = parseInt(userAnswerInput.value); // Get integer value from input
+
+            if (isNaN(userAnswer)) {
+                feedbackMessageElement.textContent = 'Please enter a number.';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            } else if (userAnswer === currentQuestion.correctValue) {
+                feedbackMessageElement.textContent = 'Correct Answer!';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-incorrect');
+                feedbackMessageElement.classList.add('feedback-correct');
+            } else {
+                feedbackMessageElement.textContent = `Incorrect. The correct answer was ${currentQuestion.correctValue}.`;
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                feedbackMessageElement.classList.add('feedback-incorrect');
+            }
+        }
+
+        // Function to export content as PDF
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export'); // Element to capture
+
+            const canvas = await html2canvas(element, {
+                scale: 1, // Optimized for smaller PDF file size
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with quality 0.8
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save('data_range_question.pdf');
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            generateNewQuestion(); // Generate the first question when the page loads
+        };
+    </script>
+</body>
+</html>

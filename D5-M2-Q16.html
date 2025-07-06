@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAT Math Practice - Triangle Angles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .question-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .sat-logo {
+            background: #1a73e8;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .triangle-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .triangle-svg {
+            max-width: 400px;
+            width: 100%;
+            height: auto;
+        }
+
+        .answer-choices {
+            margin: 30px 0;
+        }
+
+        .choice {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .choice:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+            transform: translateX(5px);
+        }
+
+        .choice.selected {
+            border-color: #667eea;
+            background: #ebf4ff;
+        }
+
+        .choice.correct {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .choice.incorrect {
+            border-color: #f56565;
+            background: #fef5f5;
+        }
+
+        .choice-letter {
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 15px;
+            color: #4a5568;
+            min-width: 25px;
+        }
+
+        .choice-text {
+            font-size: 16px;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .generate-btn {
+            background: #38a169;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 10px auto 0;
+            box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 161, 105, 0.4);
+        }
+
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            color: #2f855a;
+        }
+
+        .feedback.incorrect {
+            background: #fef5f5;
+            border: 2px solid #f56565;
+            color: #c53030;
+        }
+
+        .calculation-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="header">
+        </div>
+
+        <div class="question-text" id="questionText">
+            In △RST, the measure of ∠R is 63°. Which of the following could be the measure, in degrees, of ∠S?
+        </div>
+
+        <div class="answer-choices">
+            <div class="choice" data-choice="A">
+                <span class="choice-letter">A)</span>
+                <span class="choice-text" id="choiceA">116</span>
+            </div>
+            <div class="choice" data-choice="B">
+                <span class="choice-letter">B)</span>
+                <span class="choice-text" id="choiceB">118</span>
+            </div>
+            <div class="choice" data-choice="C">
+                <span class="choice-letter">C)</span>
+                <span class="choice-text" id="choiceC">126</span>
+            </div>
+            <div class="choice" data-choice="D">
+                <span class="choice-letter">D)</span>
+                <span class="choice-text" id="choiceD">180</span>
+            </div>
+        </div>
+
+        <button class="submit-btn" onclick="checkAnswer()">Submit Answer</button>
+        <button class="generate-btn" onclick="generateNewNumbers()">Generate New Question</button>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        let selectedChoice = null;
+        let answered = false;
+        let currentData = {
+            angleR: 63,
+            choices: [116, 118, 126, 180]
+        };
+
+        // Initialize the display
+        updateDisplay();
+
+        function updateDisplay() {
+            // Update question text
+            document.getElementById('questionText').innerHTML = 
+                `In △RST, the measure of ∠R is ${currentData.angleR}°. Which of the following could be the measure, in degrees, of ∠S?`;
+            
+            // Update angle label in SVG
+            // (SVG removed, so this line is no longer needed)
+            
+            // Update choices
+            document.getElementById('choiceA').textContent = currentData.choices[0];
+            document.getElementById('choiceB').textContent = currentData.choices[1];
+            document.getElementById('choiceC').textContent = currentData.choices[2];
+            document.getElementById('choiceD').textContent = currentData.choices[3];
+        }
+
+        // Add click listeners to choices
+        document.querySelectorAll('.choice').forEach(choice => {
+            choice.addEventListener('click', function() {
+                if (answered) return;
+                
+                // Remove previous selection
+                document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+                
+                // Select current choice
+                this.classList.add('selected');
+                selectedChoice = this.dataset.choice;
+            });
+        });
+
+        function generateNewNumbers() {
+            // Generate new angle R (between 20° and 100°)
+            currentData.angleR = Math.floor(Math.random() * 81) + 20;
+            
+            // Generate valid choices for angle S
+            // In a triangle, angles must sum to 180°
+            // So angle S can be any value from 1° to (179° - angleR)
+            const maxAngleS = 179 - currentData.angleR;
+            
+            // Generate one correct answer (valid angle S)
+            const correctAnswer = Math.floor(Math.random() * Math.min(maxAngleS, 150)) + 1;
+            
+            // Generate three incorrect answers
+            const incorrectAnswers = [];
+            
+            // Add some angles that would make the sum > 180°
+            incorrectAnswers.push(Math.floor(Math.random() * 50) + maxAngleS + 1);
+            incorrectAnswers.push(Math.floor(Math.random() * 30) + maxAngleS + 20);
+            
+            // Add 180° as a common wrong answer
+            incorrectAnswers.push(180);
+            
+            // Shuffle all answers
+            const allAnswers = [correctAnswer, ...incorrectAnswers];
+            currentData.choices = allAnswers.sort(() => Math.random() - 0.5);
+            
+            // Reset the question state
+            resetQuestion();
+            
+            // Update display
+            updateDisplay();
+        }
+
+        function checkAnswer() {
+            if (!selectedChoice || answered) return;
+            
+            answered = true;
+            const feedback = document.getElementById('feedback');
+            
+            const choiceIndex = ['A', 'B', 'C', 'D'].indexOf(selectedChoice);
+            const selectedAngle = currentData.choices[choiceIndex];
+            
+            // Check if the selected angle is valid (R + S < 180°)
+            const isValid = currentData.angleR + selectedAngle < 180;
+            
+            // Find the correct answer
+            let correctAnswer = null;
+            currentData.choices.forEach((angle, index) => {
+                if (currentData.angleR + angle < 180 && !correctAnswer) {
+                    correctAnswer = ['A', 'B', 'C', 'D'][index];
+                }
+            });
+            
+            // Show correct/incorrect styling
+            document.querySelectorAll('.choice').forEach(choice => {
+                const idx = ['A', 'B', 'C', 'D'].indexOf(choice.dataset.choice);
+                const angle = currentData.choices[idx];
+                if (currentData.angleR + angle < 180) {
+                    choice.classList.add('correct');
+                } else if (choice.dataset.choice === selectedChoice && !isValid) {
+                    choice.classList.add('incorrect');
+                }
+            });
+            
+            if (isValid) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong><br><br>
+                    In any triangle, the sum of all three angles must equal 180°.<br>
+                    <div class="calculation-box">
+                    ∠R + ∠S + ∠T = 180°<br>
+                    ${currentData.angleR}° + ${selectedAngle}° + ∠T = 180°<br>
+                    ∠T = 180° - ${currentData.angleR}° - ${selectedAngle}° = ${180 - currentData.angleR - selectedAngle}°
+                    </div>
+                    Since all angles are positive, ${selectedAngle}° is a valid measure for ∠S.
+                `;
+            } else {
+                feedback.className = 'feedback incorrect';
+                const correctAngle = currentData.choices[['A', 'B', 'C', 'D'].indexOf(correctAnswer)];
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> The correct answer is ${correctAnswer}.<br><br>
+                    In any triangle, the sum of all three angles must equal 180°.<br>
+                    <div class="calculation-box">
+                    If ∠S = ${selectedAngle}°, then:<br>
+                    ∠R + ∠S = ${currentData.angleR}° + ${selectedAngle}° = ${currentData.angleR + selectedAngle}°<br>
+                    This leaves ∠T = 180° - ${currentData.angleR + selectedAngle}° = ${180 - currentData.angleR - selectedAngle}°
+                    </div>
+                    ${180 - currentData.angleR - selectedAngle < 0 ? 
+                        "Since angle T would be negative, this is impossible." : 
+                        "This violates the triangle angle sum property."
+                    }<br><br>
+                    The correct answer is ${correctAngle}° because it allows for a positive third angle.
+                `;
+            }
+            
+            feedback.style.display = 'block';
+            document.querySelector('.submit-btn').disabled = true;
+        }
+
+        function resetQuestion() {
+            selectedChoice = null;
+            answered = false;
+            
+            document.querySelectorAll('.choice').forEach(choice => {
+                choice.classList.remove('selected', 'correct', 'incorrect');
+            });
+            
+            document.getElementById('feedback').style.display = 'none';
+            document.querySelector('.submit-btn').disabled = false;
+        }
+    </script>
+</body>
+</html>

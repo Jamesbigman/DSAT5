@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Evaluation Problem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- MathJax for rendering mathematical expressions -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        .equation-display {
+            font-family: 'Times New Roman', serif; /* For mathematical notation */
+            font-size: 1.8em;
+            text-align: center;
+            margin: 20px 0;
+            line-height: 1.8;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Adjusted for values */
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .option {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .option:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        .option.selected {
+            background-color: #d4edda;
+            border-color: #28a745;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .option input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 150px;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+        .correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        .solution-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            display: none;
+            border: 1px solid #d0d0d0;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: flex-start;
+        }
+        .step-number {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 28px;
+            height: 28px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .math {
+            font-family: 'Times New Roman', Times, serif; /* MathJax default font */
+            font-style: italic;
+        }
+        /* Ensure MathJax elements are styled correctly */
+        mjx-container {
+            font-family: 'Times New Roman', Times, serif !important;
+            font-size: 1.1em !important; /* Adjust if needed */
+        }
+        @media (max-width: 600px) {
+            .buttons {
+                flex-direction: column;
+            }
+            .options-grid {
+                grid-template-columns: 1fr; /* Stack options on small screens */
+            }
+            .option {
+                flex-direction: row; /* Keep radio button next to text */
+                align-items: center;
+            }
+            .option label {
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Function Evaluation Problem</h1>
+        
+        <div class="question-container">
+            <p class="text-lg text-gray-700 mb-4" id="intro-text">
+                The function $f$ is defined by $f(x) = ax + b$.
+            </p>
+            <div class="equation-display" id="equation-display">
+                <!-- Equation will be dynamically generated here -->
+            </div>
+            <p class="text-lg text-gray-700 mb-4" id="question-text">
+                What is the value of $f(\text{target_x})$?
+            </p>
+
+            <form id="answer-form">
+                <div class="options-grid" id="options-list">
+                    <!-- Options will be dynamically generated here -->
+                </div>
+            </form>
+            <div class="feedback" id="feedback"></div>
+            
+            <div class="solution-steps" id="solution-steps">
+                <h3 class="text-xl font-semibold mb-3">Solution Steps:</h3>
+                <div class="step"><span class="step-number">1</span> <span id="step1-text"></span></div>
+                <div class="step"><span class="step-number">2</span> <span id="step2-text"></span></div>
+                <div class="step"><span class="step-number">3</span> <span id="step3-text"></span></div>
+            </div>
+
+            <div class="buttons">
+                <button type="button" class="btn btn-primary" onclick="generateNewQuestion()">Generate New Question</button>
+                <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentQuestion = {}; // Stores current question data (a, b, targetX, correctY, equationString)
+
+        // DOM elements
+        const introTextElement = document.getElementById('intro-text');
+        const equationDisplayElement = document.getElementById('equation-display');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsListElement = document.getElementById('options-list');
+        const feedbackElement = document.getElementById('feedback');
+        const solutionStepsElement = document.getElementById('solution-steps');
+        const step1TextElement = document.getElementById('step1-text');
+        const step2TextElement = document.getElementById('step2-text');
+        const step3TextElement = document.getElementById('step3-text');
+
+        /**
+         * Generates a random integer within a specified range.
+         * @param {number} min - The minimum value (inclusive).
+         * @param {number} max - The maximum value (inclusive).
+         * @returns {number} A random integer.
+         */
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /**
+         * Shuffles an array in place using the Fisher-Yates algorithm.
+         * @param {Array} array - The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Generates a linear function (f(x) = ax + b) and a target x-value for evaluation.
+         * Ensures integer coefficients and integer target x, and a reasonable integer result.
+         * @returns {object} Contains a, b, targetX, correctY, and equationString.
+         */
+        function generateFunctionEvaluationProblem() {
+            let a, b, targetX, correctY;
+
+            // Generate coefficients 'a' and 'b'
+            a = getRandomInt(2, 5); // Coefficient of x (e.g., 2, 3, 4, 5)
+            b = getRandomInt(-10, 10); // Constant term (e.g., -10 to 10)
+
+            // Generate target x for evaluation
+            targetX = getRandomInt(5, 15); // x value to evaluate f(x) at
+
+            // Calculate the correct y value (f(targetX))
+            correctY = a * targetX + b;
+
+            // Format equation string for display
+            let equationString = `f(x) = ${a}x`;
+            if (b !== 0) {
+                equationString += b > 0 ? ` + ${b}` : ` - ${Math.abs(b)}`;
+            }
+
+            return {
+                a: a,
+                b: b,
+                targetX: targetX,
+                correctY: correctY,
+                equationString: equationString
+            };
+        }
+
+        /**
+         * Generates multiple-choice options for the question.
+         * @param {number} correctY - The correct evaluation result.
+         */
+        function generateOptions(correctY) {
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            let options = [correctY]; // Start with the correct answer
+
+            // Generate distractors
+            while (options.length < 4) {
+                let distractor;
+                const type = getRandomInt(1, 3); // 1: nearby, 2: common mistake, 3: random
+
+                if (type === 1) { // Nearby value
+                    distractor = correctY + getRandomInt(-5, 5);
+                } else if (type === 2) { // Common mistake: e.g., just 'a*targetX' or just 'b'
+                    if (Math.random() < 0.5) {
+                        distractor = currentQuestion.a * currentQuestion.targetX;
+                    } else {
+                        distractor = currentQuestion.b;
+                    }
+                } else { // Random value
+                    distractor = getRandomInt(-50, 50); // A wider range for random distractors
+                }
+
+                // Ensure distractors are unique and not the correct answer
+                if (!options.includes(distractor) && distractor !== correctY) {
+                    options.push(distractor);
+                }
+            }
+
+            // Shuffle options and assign letters
+            shuffleArray(options);
+            let correctOptionLetter = '';
+            
+            optionsListElement.innerHTML = ''; // Clear previous options
+            options.forEach((value, index) => {
+                const letter = optionLetters[index];
+                if (value === correctY) {
+                    correctOptionLetter = letter;
+                }
+                const li = document.createElement('div');
+                li.className = 'option';
+                li.setAttribute('data-value', letter);
+                li.innerHTML = `
+                    <input type="radio" id="option${letter}" name="answer" value="${letter}">
+                    <label for="option${letter}">${letter}) ${value}</label>
+                `;
+                optionsListElement.appendChild(li);
+
+                // Add event listener for option selection
+                li.addEventListener('click', handleOptionClick);
+            });
+
+            currentQuestion.correctAnswer = correctOptionLetter; // Store the correct letter
+        }
+
+        /**
+         * Generates step-by-step solution.
+         * @param {number} a - Coefficient 'a'.
+         * @param {number} b - Constant 'b'.
+         * @param {number} targetX - The x-value for evaluation.
+         * @param {number} correctY - The correct result.
+         * @param {string} equationString - The formatted equation string.
+         */
+        function generateSolutionSteps(a, b, targetX, correctY, equationString) {
+            step1TextElement.innerHTML = `
+                The function is defined as $f(x) = ${equationString}$.
+            `;
+            step2TextElement.innerHTML = `
+                To find $f(${targetX})$, substitute $x = ${targetX}$ into the function:
+                $f(${targetX}) = ${a} \\times ${targetX} ${b > 0 ? '+' : '-'} ${Math.abs(b)}$
+            `;
+            step3TextElement.innerHTML = `
+                Calculate the value: $f(${targetX}) = ${correctY}$.
+            `;
+
+            // Trigger MathJax typesetting for solution steps
+            if (window.MathJax) {
+                MathJax.typesetPromise([step1TextElement, step2TextElement, step3TextElement]).catch(function (err) {
+                    console.error('MathJax typesetting failed for solution steps:', err);
+                });
+            }
+        }
+
+        /**
+         * Handles the click event on an answer option.
+         */
+        function handleOptionClick() {
+            // Remove 'selected' class from all options
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+                const radio = opt.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+
+            // Add 'selected' class to the clicked option
+            this.classList.add('selected');
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+
+            const selectedValue = this.getAttribute('data-value');
+            
+            if (selectedValue === currentQuestion.correctAnswer) {
+                feedbackElement.innerHTML = `✅ <strong>Correct!</strong> The value of $f(${currentQuestion.targetX})$ is ${currentQuestion.correctY}.`;
+                feedbackElement.className = 'feedback correct';
+            } else {
+                feedbackElement.innerHTML = `❌ <strong>Incorrect.</strong> The correct answer is ${currentQuestion.correctAnswer}) ${currentQuestion.correctY}.`;
+                feedbackElement.className = 'feedback incorrect';
+            }
+            feedbackElement.style.display = 'block';
+            solutionStepsElement.style.display = 'block'; // Show solution steps on answer
+
+            // Render MathJax again for feedback and solution steps
+            if (window.MathJax) {
+                MathJax.typesetPromise([feedbackElement, solutionStepsElement]).catch(function (err) {
+                    console.error('MathJax typesetting failed for feedback/solution:', err);
+                });
+            }
+        }
+
+        /**
+         * Generates a new question, updates the equation, options, and solution steps.
+         */
+        function generateNewQuestion() {
+            // Reset UI elements
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+                const radio = opt.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+            feedbackElement.style.display = 'none';
+            solutionStepsElement.style.display = 'none';
+            
+            // Generate new problem data
+            const problemData = generateFunctionEvaluationProblem();
+            currentQuestion = { ...problemData }; // Copy properties
+
+            // Update intro text and question text
+            introTextElement.innerHTML = `
+                The function $f$ is defined by $f(x) = ax + b$.
+            `;
+            equationDisplayElement.innerHTML = `$$ f(x) = ${currentQuestion.equationString} $$`;
+            questionTextElement.innerHTML = `
+                What is the value of $f(${currentQuestion.targetX})$?
+            `;
+
+            // Generate options
+            generateOptions(currentQuestion.correctY);
+
+            // Generate solution steps
+            generateSolutionSteps(currentQuestion.a, currentQuestion.b, currentQuestion.targetX, currentQuestion.correctY, currentQuestion.equationString);
+
+            // Trigger MathJax typesetting for all new content
+            if (window.MathJax) {
+                MathJax.typesetPromise([introTextElement, equationDisplayElement, questionTextElement, feedbackElement, solutionStepsElement]).catch(function (err) {
+                    console.error('MathJax typesetting failed during new question generation:', err);
+                });
+            }
+        }
+
+        /**
+         * Exports the content of the question container as a PDF.
+         */
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export');
+
+            // Temporarily show solution steps and feedback for PDF export
+            const feedbackWasHidden = feedbackElement.style.display === 'none';
+            const solutionWasHidden = solutionStepsElement.style.display === 'none';
+            if (feedbackWasHidden) feedbackElement.style.display = 'block';
+            if (solutionWasHidden) solutionStepsElement.style.display = 'block';
+
+            // Ensure MathJax has rendered before capturing
+            await MathJax.typesetPromise();
+
+            const canvas = await html2canvas(element, {
+                scale: 1, // Optimize for smaller PDF file size
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG with quality 0.8
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save('function_evaluation_problem.pdf');
+
+            // Hide solution steps and feedback again if they were hidden originally
+            if (feedbackWasHidden) feedbackElement.style.display = 'none';
+            if (solutionWasHidden) solutionStepsElement.style.display = 'none';
+        }
+
+        // Initial generation when the page loads
+        window.onload = generateNewQuestion;
+    </script>
+</body>
+</html>

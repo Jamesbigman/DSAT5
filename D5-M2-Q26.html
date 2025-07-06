@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Circle and Tangent Line Questions</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .circle-info {
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+            border: 1px solid #ccc;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .option {
+            padding: 15px 20px;
+            border: 1px solid black;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            background: white;
+            margin-bottom: 2px;
+        }
+        
+        .option:hover {
+            background: #f0f0f0;
+        }
+        
+        .option.selected {
+            background: #e0e0e0;
+        }
+        
+        .option.correct {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        
+        .option.incorrect {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+        
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            width: 25px;
+        }
+        
+        .option-content {
+            font-size: 18px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid black;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: black;
+        }
+        
+        .coordinate {
+            display: inline-block;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="circle-info" id="circleInfo">
+            <!-- Circle information will be generated here -->
+        </div>
+        
+        <div class="question-text" id="questionText">
+            <!-- Question text will be generated here -->
+        </div>
+        
+        <div class="options" id="options">
+            <!-- Options will be generated here -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()" id="submitBtn">Submit Answer</button>
+            <button class="btn" onclick="generateNewQuestion()">New Question</button>
+            <button class="btn" onclick="showSolution()" id="solutionBtn" style="display: none;">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="correctCount">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = {};
+        let selectedOption = null;
+        let answered = false;
+        let stats = { correct: 0, total: 0 };
+
+        function formatPoint(x, y) {
+            return `(${x}, ${y})`;
+        }
+
+        function formatMixedNumber(whole, numerator, denominator) {
+            if (whole === 0) return `${numerator}/${denominator}`;
+            return `${whole} ${numerator}/${denominator}`;
+        }
+
+        function generateQuestion() {
+            const questionTypes = [
+                'tangent_line_point',
+                'circle_equation',
+                'perpendicular_radius',
+                'tangent_slope'
+            ];
+            
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+            
+            // Generate circle parameters
+            const centers = [
+                [-1, 1], [2, -3], [0, 4], [-2, 2], [3, 1], [1, -2], [-3, 0], [4, -1]
+            ];
+            const center = centers[Math.floor(Math.random() * centers.length)];
+            const [h, k] = center;
+            
+            // Generate tangent point
+            const tangentPoints = [
+                [5, -4], [3, 2], [-2, 6], [7, -1], [1, 5], [-4, 3], [6, 2], [0, -3]
+            ];
+            const tangentPoint = tangentPoints[Math.floor(Math.random() * tangentPoints.length)];
+            const [x1, y1] = tangentPoint;
+            
+            // Calculate radius
+            const radius = Math.sqrt((x1 - h) ** 2 + (y1 - k) ** 2);
+            
+            // Calculate slope of radius (center to tangent point)
+            const radiusSlope = (y1 - k) / (x1 - h);
+            
+            // Calculate slope of tangent line (perpendicular to radius)
+            const tangentSlope = -1 / radiusSlope;
+            
+            let circleInfo, questionText, correctAnswer, wrongAnswers;
+            
+            switch(questionType) {
+                case 'tangent_line_point':
+                    circleInfo = `A circle in the xy-plane has its center at ${formatPoint(h, k)}.`;
+                    questionText = `Line t is tangent to this circle at the point ${formatPoint(x1, y1)}.<br>Which of the following points also lies on line t?`;
+                    
+                    // Generate correct point using point-slope form
+                    const deltaX = Math.random() > 0.5 ? 2 : -2;
+                    const deltaY = tangentSlope * deltaX;
+                    const correctX = x1 + deltaX;
+                    const correctY = y1 + deltaY;
+                    correctAnswer = formatPoint(correctX, correctY);
+                    
+                    // Generate wrong answers
+                    wrongAnswers = [
+                        formatPoint(x1 + 3, y1 + 1),
+                        formatPoint(x1 - 1, y1 + 3),
+                        formatPoint(x1 + 1, y1 - 2)
+                    ];
+                    break;
+                    
+                case 'circle_equation':
+                    const r = Math.round(radius * 10) / 10;
+                    circleInfo = `A circle has center ${formatPoint(h, k)} and passes through point ${formatPoint(x1, y1)}.`;
+                    questionText = `What is the equation of this circle?`;
+                    
+                    correctAnswer = `(x - ${h})² + (y - ${k})² = ${r.toFixed(1)}²`;
+                    wrongAnswers = [
+                        `(x + ${h})² + (y + ${k})² = ${r.toFixed(1)}²`,
+                        `(x - ${h})² + (y - ${k})² = ${(r + 1).toFixed(1)}²`,
+                        `(x - ${h})² + (y - ${k})² = ${(r - 1).toFixed(1)}²`
+                    ];
+                    break;
+                    
+                case 'perpendicular_radius':
+                    circleInfo = `A circle has center ${formatPoint(h, k)}.`;
+                    questionText = `A line is tangent to this circle at point ${formatPoint(x1, y1)}.<br>What is the slope of the radius to the point of tangency?`;
+                    
+                    correctAnswer = radiusSlope.toFixed(2);
+                    wrongAnswers = [
+                        (-radiusSlope).toFixed(2),
+                        tangentSlope.toFixed(2),
+                        (1/radiusSlope).toFixed(2)
+                    ];
+                    break;
+                    
+                case 'tangent_slope':
+                    circleInfo = `A circle has center ${formatPoint(h, k)}.`;
+                    questionText = `A line is tangent to this circle at point ${formatPoint(x1, y1)}.<br>What is the slope of the tangent line?`;
+                    
+                    correctAnswer = tangentSlope.toFixed(2);
+                    wrongAnswers = [
+                        radiusSlope.toFixed(2),
+                        (-tangentSlope).toFixed(2),
+                        (1/tangentSlope).toFixed(2)
+                    ];
+                    break;
+            }
+            
+            // Create options array and shuffle
+            const options = [correctAnswer, ...wrongAnswers.slice(0, 3)].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                circleInfo,
+                questionText,
+                correctAnswer,
+                options,
+                correctIndex: options.indexOf(correctAnswer),
+                questionType,
+                center,
+                tangentPoint,
+                radius,
+                radiusSlope,
+                tangentSlope
+            };
+        }
+
+        function displayQuestion() {
+            const circleInfoDiv = document.getElementById('circleInfo');
+            const questionTextDiv = document.getElementById('questionText');
+            const optionsDiv = document.getElementById('options');
+            
+            circleInfoDiv.innerHTML = currentQuestion.circleInfo;
+            questionTextDiv.innerHTML = currentQuestion.questionText;
+            
+            // Display options
+            optionsDiv.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `
+                    <span class="option-label">${String.fromCharCode(65 + index)})</span>
+                    <span class="option-content">${option}</span>
+                `;
+                optionDiv.onclick = () => selectOption(index);
+                optionsDiv.appendChild(optionDiv);
+            });
+            
+            // Reset state
+            selectedOption = null;
+            answered = false;
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('solutionBtn').style.display = 'none';
+            document.getElementById('feedback').className = 'feedback';
+        }
+
+        function selectOption(index) {
+            if (answered) return;
+            
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Select new option
+            document.querySelectorAll('.option')[index].classList.add('selected');
+            selectedOption = index;
+        }
+
+        function checkAnswer() {
+            if (selectedOption === null) {
+                alert('Please select an answer first!');
+                return;
+            }
+            
+            answered = true;
+            stats.total++;
+            
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            
+            if (selectedOption === currentQuestion.correctIndex) {
+                stats.correct++;
+                options[selectedOption].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Correct!</strong> You correctly solved this circle and tangent line problem.
+                `;
+            } else {
+                options[selectedOption].classList.add('incorrect');
+                options[currentQuestion.correctIndex].classList.add('correct');
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `
+                    <strong>Incorrect.</strong> Remember the key relationships:
+                    <br>• A tangent line is perpendicular to the radius at the point of tangency
+                    <br>• If the radius has slope m, the tangent line has slope -1/m
+                    <br>• Use the point-slope form to find other points on the tangent line
+                `;
+            }
+            
+            updateStats();
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('solutionBtn').style.display = 'inline-block';
+        }
+
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            
+            let explanation = '<strong>Complete Solution:</strong><br>';
+            const [h, k] = currentQuestion.center;
+            const [x1, y1] = currentQuestion.tangentPoint;
+            
+            switch(currentQuestion.questionType) {
+                case 'tangent_line_point':
+                    explanation += `1. Find the slope of the radius from center ${formatPoint(h, k)} to tangent point ${formatPoint(x1, y1)}:<br>`;
+                    explanation += `   Slope of radius = (${y1} - ${k})/(${x1} - ${h}) = ${currentQuestion.radiusSlope.toFixed(2)}<br>`;
+                    explanation += `2. The tangent line is perpendicular to the radius, so its slope is:<br>`;
+                    explanation += `   Slope of tangent = -1/(${currentQuestion.radiusSlope.toFixed(2)}) = ${currentQuestion.tangentSlope.toFixed(2)}<br>`;
+                    explanation += `3. Use point-slope form with point ${formatPoint(x1, y1)} to find the equation of the tangent line.<br>`;
+                    explanation += `4. Check which given point satisfies this equation.`;
+                    break;
+                case 'circle_equation':
+                    explanation += `1. The standard form of a circle with center (h, k) and radius r is:<br>`;
+                    explanation += `   (x - h)² + (y - k)² = r²<br>`;
+                    explanation += `2. Center is ${formatPoint(h, k)}, so h = ${h}, k = ${k}<br>`;
+                    explanation += `3. Radius = distance from center to point ${formatPoint(x1, y1)}:<br>`;
+                    explanation += `   r = √[(${x1} - ${h})² + (${y1} - ${k})²] = ${currentQuestion.radius.toFixed(2)}<br>`;
+                    explanation += `4. Therefore: (x - ${h})² + (y - ${k})² = ${currentQuestion.radius.toFixed(2)}²`;
+                    break;
+                case 'perpendicular_radius':
+                    explanation += `The slope of the radius from center ${formatPoint(h, k)} to point ${formatPoint(x1, y1)} is:<br>`;
+                    explanation += `Slope = (${y1} - ${k})/(${x1} - ${h}) = ${currentQuestion.radiusSlope.toFixed(2)}`;
+                    break;
+                case 'tangent_slope':
+                    explanation += `1. First find the slope of the radius from center ${formatPoint(h, k)} to tangent point ${formatPoint(x1, y1)}:<br>`;
+                    explanation += `   Slope of radius = (${y1} - ${k})/(${x1} - ${h}) = ${currentQuestion.radiusSlope.toFixed(2)}<br>`;
+                    explanation += `2. The tangent line is perpendicular to the radius, so:<br>`;
+                    explanation += `   Slope of tangent = -1/(slope of radius) = -1/(${currentQuestion.radiusSlope.toFixed(2)}) = ${currentQuestion.tangentSlope.toFixed(2)}`;
+                    break;
+            }
+            
+            feedback.innerHTML = explanation;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = stats.correct;
+            document.getElementById('totalCount').textContent = stats.total;
+            document.getElementById('accuracy').textContent = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+        }
+
+        function generateNewQuestion() {
+            generateQuestion();
+            displayQuestion();
+        }
+
+        // Initialize
+        generateNewQuestion();
+    </script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System of Equations Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .question-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .equation-display {
+            font-family: 'Times New Roman', serif; /* For mathematical notation */
+            font-size: 1.5em;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .options-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+        .options-list li {
+            margin-bottom: 10px;
+            padding: 8px 0;
+            font-size: 1.1em;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        .options-list input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2); /* Make radio buttons slightly larger */
+        }
+        .feedback-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .feedback-correct {
+            background-color: #e6ffe6;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        .feedback-incorrect {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="content-to-export">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">System of Equations Solver</h1>
+
+        <div class="question-section">
+            <div class="equation-display" id="equation-display">
+                <!-- Equations will be dynamically generated here -->
+            </div>
+            <p class="text-lg text-gray-700 mb-4 text-center" id="question-text">
+                What is the solution (r, s) to the given system of equations?
+            </p>
+
+            <form id="answer-form">
+                <ul class="options-list" id="options-list">
+                    <!-- Options will be dynamically generated here -->
+                </ul>
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                    <button type="button" class="btn btn-secondary" onclick="generateNewQuestion()">Generate New Question</button>
+                    <button type="button" class="btn btn-secondary" onclick="exportToPdf()">Export as PDF</button>
+                </div>
+            </form>
+            <div id="feedback-message" class="feedback-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        const equationDisplayElement = document.getElementById('equation-display');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsListElement = document.getElementById('options-list');
+        const feedbackMessageElement = document.getElementById('feedback-message');
+
+        let currentQuestion = {}; // To store the current question's data
+
+        // Function to generate a random integer within a range
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Function to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        // Function to generate a new question (system of equations)
+        function generateNewQuestion() {
+            // Hide any previous feedback
+            feedbackMessageElement.classList.add('hidden');
+            feedbackMessageElement.textContent = '';
+            feedbackMessageElement.classList.remove('feedback-correct', 'feedback-incorrect');
+
+            // Generate random numbers for the system of equations
+            // Equation 1: s + ar = b
+            // Equation 2: r = c
+            const a = getRandomInt(1, 5); // Coefficient of r in the first equation
+            const c = getRandomInt(-5, 5); // Value of r (solution for r)
+            const sSolution = getRandomInt(-10, 10); // Desired integer solution for s
+
+            // Calculate b based on the desired sSolution and c
+            // sSolution + a * c = b
+            const b = sSolution + a * c;
+
+            // Construct the equations string without $$
+            const equation1 = `s ${a > 0 ? '+' : '-'} ${Math.abs(a)}r = ${b}`;
+            const equation2 = `r = ${c}`;
+
+            const equationsHtml = `
+                <div>${equation1}</div>
+                <div>${equation2}</div>
+            `;
+
+            // Correct solution (r, s)
+            const correctR = c;
+            const correctS = sSolution;
+            const correctAnswerText = `(${correctR}, ${correctS})`;
+
+            // Generate options (correct answer + 3 distractors)
+            let options = [correctAnswerText];
+
+            // Generate distractors
+            while (options.length < 4) {
+                let distractorR, distractorS;
+                const type = getRandomInt(1, 4); // Different types of distractors
+
+                if (type === 1) { // Swapped coordinates
+                    distractorR = correctS;
+                    distractorS = correctR;
+                } else if (type === 2) { // Incorrect s calculation (e.g., s = b + ar)
+                    distractorR = correctR;
+                    distractorS = b + a * c;
+                } else if (type === 3) { // Incorrect r (random)
+                    distractorR = getRandomInt(-10, 10);
+                    distractorS = b - a * distractorR; // Calculate s based on this incorrect r
+                } else { // Completely random
+                    distractorR = getRandomInt(-10, 10);
+                    distractorS = getRandomInt(-10, 10);
+                }
+
+                const distractorText = `(${distractorR}, ${distractorS})`;
+
+                // Ensure distractor is unique and not the correct answer
+                if (!options.includes(distractorText)) {
+                    options.push(distractorText);
+                }
+            }
+
+            // Shuffle options and assign A, B, C, D
+            options = shuffleArray(options);
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            let correctOptionLetter = '';
+            const formattedOptions = options.map((value, index) => {
+                const letter = optionLetters[index];
+                if (value === correctAnswerText) {
+                    correctOptionLetter = letter;
+                }
+                return `${letter}) ${value}`;
+            });
+
+            // Store the current question data
+            currentQuestion = {
+                equationsHtml: equationsHtml,
+                options: formattedOptions,
+                correct: correctOptionLetter,
+                correctValue: correctAnswerText // Store the value for reference
+            };
+
+            // Update equation display and options in the DOM
+            equationDisplayElement.innerHTML = currentQuestion.equationsHtml;
+            optionsListElement.innerHTML = '';
+            currentQuestion.options.forEach((optionText, index) => {
+                const li = document.createElement('li');
+                const optionId = `option-${optionLetters[index]}`;
+                li.innerHTML = `
+                    <input type="radio" id="${optionId}" name="answer" value="${optionLetters[index]}">
+                    <label for="${optionId}">${optionText}</label>
+                `;
+                optionsListElement.appendChild(li);
+            });
+        }
+
+        // Function to submit the answer
+        function submitAnswer() {
+            const selectedOption = document.querySelector('input[name="answer"]:checked');
+            if (selectedOption) {
+                const userAnswerLetter = selectedOption.value;
+                if (userAnswerLetter === currentQuestion.correct) {
+                    feedbackMessageElement.textContent = 'Correct Answer!';
+                    feedbackMessageElement.classList.remove('hidden', 'feedback-incorrect');
+                    feedbackMessageElement.classList.add('feedback-correct');
+                } else {
+                    feedbackMessageElement.textContent = `Incorrect. The correct answer was ${currentQuestion.correct}) ${currentQuestion.correctValue}.`;
+                    feedbackMessageElement.classList.remove('hidden', 'feedback-correct');
+                    feedbackMessageElement.classList.add('feedback-incorrect');
+                }
+            } else {
+                feedbackMessageElement.textContent = 'Please select an answer.';
+                feedbackMessageElement.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
+                feedbackMessageElement.classList.add('feedback-incorrect'); // Use incorrect style for "please select"
+            }
+        }
+
+        // Function to export content as PDF
+        async function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('content-to-export'); // Element to capture
+
+            // Use html2canvas to render the HTML element as a canvas
+            // Reducing the scale to 1 (from 2) significantly reduces file size.
+            // A scale of 1 means 1 CSS pixel = 1 image pixel.
+            const canvas = await html2canvas(element, {
+                scale: 1, // Optimized for smaller PDF file size (e.g., within 1 MB for typical content)
+                useCORS: true,
+                logging: false, // Set to true for debugging html2canvas issues
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG with quality 0.9 for further compression
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height] // Set PDF size to canvas size
+            });
+
+            // Add the image to the PDF
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+
+            // Save the PDF
+            pdf.save('system_of_equations_question.pdf');
+        }
+
+        // Initial setup on window load
+        window.onload = () => {
+            generateNewQuestion(); // Generate the first question when the page loads
+        };
+    </script>
+</body>
+</html>

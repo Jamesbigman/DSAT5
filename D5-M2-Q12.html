@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAT Probability Question</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .question-container {
+            padding: 15px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        .options {
+            margin: 20px 0;
+        }
+        .option {
+            padding: 8px 0;
+            margin: 5px 0;
+            border: 1px solid transparent;
+        }
+        .option:hover {
+            background-color: #f5f5f5;
+        }
+        .option.selected {
+            border-left: 3px solid #000;
+            padding-left: 5px;
+        }
+        .option-label {
+            display: inline-block;
+            width: 20px;
+            font-weight: bold;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 10px;
+            display: none;
+            font-style: italic;
+        }
+        .correct {
+            color: #006400;
+        }
+        .incorrect {
+            color: #8B0000;
+        }
+        button {
+            background: none;
+            border: 1px solid #333;
+            padding: 5px 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        button:hover {
+            background-color: #f5f5f5;
+        }
+        .probability {
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <p>At a movie theater, there are a total of <span id="totalCustomers">350</span> customers. Each customer is located in either theater A, theater B, or theater C. If one of these customers is selected at random, the probability of selecting a customer who is located in theater A is <span class="probability" id="probA">0.48</span>, and the probability of selecting a customer who is located in theater B is <span class="probability" id="probB">0.24</span>.</p>
+        
+        <p>How many customers are located in theater C?</p>
+        
+        <div class="options">
+            <div class="option" data-value="A"><span class="option-label">A)</span> <span id="optionA">28</span></div>
+            <div class="option" data-value="B"><span class="option-label">B)</span> <span id="optionB">40</span></div>
+            <div class="option" data-value="C"><span class="option-label">C)</span> <span id="optionC">84</span></div>
+            <div class="option" data-value="D"><span class="option-label">D)</span> <span id="optionD">98</span></div>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <button id="newQuestion">Generate New Question</button>
+
+    <script>
+        let currentQuestion = {
+            totalCustomers: 350,
+            probA: 0.48,
+            probB: 0.24,
+            correctAnswer: 'D'
+        };
+
+        function calculateCustomersC(total, pA, pB) {
+            return total * (1 - pA - pB);
+        }
+
+        function generateQuestion() {
+            // Clear previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('feedback').style.display = 'none';
+            
+            // Generate random parameters with clean probabilities
+            currentQuestion.totalCustomers = Math.floor(Math.random() * 21 + 30) * 10; // 300-500 in multiples of 10
+            currentQuestion.probA = Math.floor(Math.random() * 5 + 4) / 10; // 0.4-0.8 in 0.1 increments
+            currentQuestion.probB = Math.floor(Math.random() * 3 + 1) / 10; // 0.1-0.3 in 0.1 increments
+            
+            // Calculate correct answer
+            const customersC = Math.round(currentQuestion.totalCustomers * (1 - currentQuestion.probA - currentQuestion.probB));
+            
+            // Generate options
+            const options = generateOptions(customersC);
+            
+            // Update display
+            document.getElementById('totalCustomers').textContent = currentQuestion.totalCustomers;
+            document.getElementById('probA').textContent = currentQuestion.probA;
+            document.getElementById('probB').textContent = currentQuestion.probB;
+            
+            document.getElementById('optionA').textContent = options[0];
+            document.getElementById('optionB').textContent = options[1];
+            document.getElementById('optionC').textContent = options[2];
+            document.getElementById('optionD').textContent = options[3];
+            
+            // Set correct answer
+            currentQuestion.correctAnswer = String.fromCharCode(65 + options.indexOf(customersC));
+        }
+
+        function generateOptions(correctValue) {
+            const options = [];
+            
+            // Add correct answer
+            options.push(correctValue);
+            
+            // Generate plausible distractors
+            const pA = currentQuestion.probA;
+            const pB = currentQuestion.probB;
+            const total = currentQuestion.totalCustomers;
+            
+            // Common errors:
+            options.push(Math.round(total * (1 - pA))); // Forgets pB
+            options.push(Math.round(total * pA)); // Uses pA instead
+            options.push(Math.round(total * (pA + pB))); // Sums probabilities
+            
+            // Ensure unique options
+            const uniqueOptions = [...new Set(options)];
+            while (uniqueOptions.length < 4) {
+                const randomOption = Math.round(total * (Math.random() * 0.3 + 0.1));
+                if (!uniqueOptions.includes(randomOption)) {
+                    uniqueOptions.push(randomOption);
+                }
+            }
+            
+            // Shuffle options
+            for (let i = uniqueOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [uniqueOptions[i], uniqueOptions[j]] = [uniqueOptions[j], uniqueOptions[i]];
+            }
+            
+            return uniqueOptions;
+        }
+
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                const selectedValue = this.getAttribute('data-value');
+                const feedback = document.getElementById('feedback');
+                
+                const correctC = Math.round(currentQuestion.totalCustomers * (1 - currentQuestion.probA - currentQuestion.probB));
+                
+                if (selectedValue === currentQuestion.correctAnswer) {
+                    feedback.innerHTML = `Correct. There are ${correctC} customers in theater C.`;
+                    feedback.className = 'feedback correct';
+                } else {
+                    feedback.innerHTML = `Incorrect. The correct answer is ${correctC} customers in theater C.`;
+                    feedback.className = 'feedback incorrect';
+                }
+                feedback.style.display = 'block';
+            });
+        });
+
+        document.getElementById('newQuestion').addEventListener('click', generateQuestion);
+
+        window.addEventListener('DOMContentLoaded', function() {
+            generateQuestion();
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surface Area of Open-Top Box</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid black;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-text" id="questionText">
+            A cubical box without a lid has edges that are each 15 inches long. 
+            What is the exterior surface area, in square inches, of this open-top box?
+        </div>
+        
+        <input type="text" class="answer-input" id="answerInput" placeholder="Enter your answer here">
+        
+        <div class="controls">
+            <button class="btn" id="submitBtn">Submit Answer</button>
+            <button class="btn" id="solutionBtn">Show Solution</button>
+            <button class="btn" id="newQuestionBtn">New Question</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        let currentQuestion = {
+            edgeLength: 15,
+            surfaceArea: 15 * 15 * 5 // 5 sides for open-top cube
+        };
+
+        // Initialize elements
+        const questionText = document.getElementById('questionText');
+        const answerInput = document.getElementById('answerInput');
+        const feedback = document.getElementById('feedback');
+        const submitBtn = document.getElementById('submitBtn');
+        const solutionBtn = document.getElementById('solutionBtn');
+        const newQuestionBtn = document.getElementById('newQuestionBtn');
+
+        // Event listeners
+        submitBtn.addEventListener('click', checkAnswer);
+        solutionBtn.addEventListener('click', showSolution);
+        newQuestionBtn.addEventListener('click', generateNewQuestion);
+
+        function generateNewQuestion() {
+            // Generate random edge length between 10 and 30 inches
+            currentQuestion.edgeLength = Math.floor(Math.random() * 21) + 10;
+            currentQuestion.surfaceArea = currentQuestion.edgeLength * currentQuestion.edgeLength * 5;
+            
+            // Update the displayed question
+            questionText.innerHTML = 
+                `A cubical box without a lid has edges that are each ${currentQuestion.edgeLength} inches long.<br>
+                What is the exterior surface area, in square inches, of this open-top box?`;
+            
+            // Clear previous answer and feedback
+            answerInput.value = '';
+            feedback.className = 'feedback';
+            feedback.textContent = '';
+        }
+
+        function checkAnswer() {
+            const userAnswer = answerInput.value.trim();
+            
+            if (!userAnswer) {
+                alert('Please enter an answer first!');
+                return;
+            }
+            
+            const correctAnswer = currentQuestion.surfaceArea;
+            
+            if (parseInt(userAnswer) === correctAnswer) {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `<strong>Correct!</strong> The surface area is indeed ${correctAnswer} square inches.`;
+            } else {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = `<strong>Incorrect.</strong> Remember an open-top cube has 5 square faces. The correct answer is ${correctAnswer} square inches.`;
+            }
+        }
+        
+        function showSolution() {
+            const s = currentQuestion.edgeLength;
+            feedback.className = 'feedback show';
+            feedback.innerHTML = `
+                <strong>Solution:</strong><br>
+                1. A cube without a lid has 5 exterior faces instead of 6<br>
+                2. Each face is a square with area = edge length × edge length<br>
+                3. Area of one face = ${s} × ${s} = ${s*s} square inches<br>
+                4. Total surface area = 5 × ${s*s} = ${5*s*s} square inches<br>
+                <br>
+                The exterior surface area is <strong>${5*s*s}</strong> square inches.
+            `;
+        }
+
+        // Initialize first question
+        generateNewQuestion();
+    </script>
+</body>
+</html>

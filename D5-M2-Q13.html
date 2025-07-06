@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slope of Linear Equation</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+        
+        .question-container {
+            background: white;
+            border: 2px solid black;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: black;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid black;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid black;
+            background: white;
+            color: black;
+            font-size: 16px;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        
+        .btn:hover {
+            background: black;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid black;
+            font-size: 16px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            background: white;
+            color: black;
+        }
+        
+        .feedback.show {
+            opacity: 1;
+        }
+    </style>
+    <!-- Add MathJax for proper equation rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-text">
+            What is the slope of the graph of 
+            \[y = \frac{1}{2}(18x + 4) + 3x\]
+            in the \(xy\)-plane?
+        </div>
+        
+        <input type="text" class="answer-input" id="answerInput" placeholder="Enter your answer here">
+        
+        <div class="controls">
+            <button class="btn" onclick="checkAnswer()">Submit Answer</button>
+            <button class="btn" onclick="showSolution()">Show Solution</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim();
+            const feedback = document.getElementById('feedback');
+            
+            if (userAnswer === '12') {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = '<strong>Correct!</strong> The slope is indeed 12.';
+            } else {
+                feedback.className = 'feedback show';
+                feedback.innerHTML = '<strong>Incorrect.</strong> Try simplifying the equation to slope-intercept form (y = mx + b).';
+            }
+            // Render any new MathJax elements
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+        
+        function showSolution() {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show';
+            feedback.innerHTML = `
+                <strong>Solution:</strong><br>
+                1. Start with the equation: \(y = \\frac{1}{2}(18x + 4) + 3x\)<br>
+                2. Distribute the \(\\frac{1}{2}\): \(y = 9x + 2 + 3x\)<br>
+                3. Combine like terms: \(y = (9x + 3x) + 2 = 12x + 2\)<br>
+                4. The equation is now in slope-intercept form \(y = mx + b\)<br>
+                5. The coefficient of \(x\) is the slope: \(m = 12\)<br>
+                <br>
+                The slope of the line is <strong>12</strong>.
+            `;
+            // Render any new MathJax elements
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typeset();
+            }
+        }
+    </script>
+</body>
+</html>
